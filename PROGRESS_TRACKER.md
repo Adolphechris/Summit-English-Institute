@@ -1,14 +1,14 @@
 # PROGRESS TRACKER — Summit English Institute
 
 > Établi selon le plan approuvé. Chaque tâche est validée (code + test + build) avant passage à la suivante.
-> Dernière mise à jour : 2026-08-18 — PHASE 0 TERMINÉE ✅ / PHASE 1 EN COURS
+> Dernière mise à jour : 2026-08-20 — PHASE 0 TERMINÉE ✅ / PHASE 1 TERMINÉE ✅
 
 ## Cadre global
 
 | Chantier | Statut |
 |---|---|
 | **Phase 0 — Corrections bloquantes (MVP local)** | ✅ **TERMINÉE — build + tests verts** |
-| **Phase 1 — Durcissement** | 🔄 En cours |
+| **Phase 1 — Durcissement** | ✅ **TERMINÉE — toutes les sous-tâches clôturées (2026-08-20)** |
 | Phase 2 — Continuité développement | ⬜ À venir |
 | Phase 3 — Tests | ⬜ À planifier |
 | Phase 4 — Déploiement | ⬜ À planifier |
@@ -36,7 +36,7 @@
 
 > ✅ Phase 0 consolidée : au 2026-08-19, l'ensemble du projet compile avec `tsc --noEmit` (0 erreur), passe `eslint --max-warnings=0` (0 problème), exécute **60/60 tests Jest stables** (8 suites) et build Next.js `BUILD_EXIT=0`.
 
-## PHASE 1 — Durcissement 🔄
+## PHASE 1 — Durcissement ✅ (100 %, clôturée le 2026-08-20)
 
 | # | Tâche | Statut |
 |---|---|---|
@@ -46,12 +46,19 @@
 | 1.4 | Composants `Modal` + `Select` | ✅ |
 | 1.5 | Service `services/progress/update.ts` branché sur les soumissions | ✅ |
 | 1.6 | Révisions : `skill_id` correct + `POST /api/review/master` + bouton Maîtrisé | ✅ |
-| 1.7 | Erreurs API cohérentes (400/404/409 partiel) | 🔄 Partiel |
+| 1.7 | Erreurs API cohérentes (400/404/409/429/500) sur **les 22 routes** | ✅ |
 | 1.8 | Config ESLint + build lint OK | ✅ |
 | 1.9 | `scripts/backup.sh` + `scripts/migrate.sh` | ✅ |
 | 1.10 | Docs à jour (CHANGELOG, PROJECT_STRUCTURE) | ✅ |
+| 1.11 | **Refactor 100 % `apiFetch`** : login + register basculés (option `redirectOn401: false`) | ✅ |
+| 1.12 | **Test PostgreSQL réel** : `scripts/smoke-db.js` — 29/29 vérifications | ✅ |
 
-**Reste Phase 1 (ouvert)** : refactor systématique de toutes les pages vers `apiFetch` ; 404/500 cohérents sur toutes les API ; test manuel sur PostgreSQL réel.
+**Clôture 2026-08-20** : toutes les pages utilisent `apiFetch` ; les 22 routes retournent
+des erreurs uniformes (401/400/404/409/429/500) ; smoke test réel **29/29** sur `summit_english`.
+Découvertes corrigées pendant la clôture : la migration `001_final_assessment_seed.sql` (évaluation
+finale id=999) et les comptes de test n'étaient appliqués par AUCUN script → `setup.sh` et
+`update-database.sh` bouclent désormais les `database/migrations/*.sql` ; `.env.local` pointait
+sur TCP (auth SCRAM impossible sans mot de passe) → repli sur le socket Unix (auth peer).
 
 ## Journal de bord
 
@@ -65,6 +72,7 @@
 | L6 | 2026-08-18 | Phase 1.4/1.8/1.9/1.10 (UI, eslint, scripts, docs) | ✅ |
 | L7 | 2026-08-19 | Mapping SQL→camelCase (`mapUserRow`) + test rate-limit déterministe | ✅ |
 | L8 | 2026-08-19 | Validation générale : tsc 0 · ESLint 0 · 60/60 tests · `next build` OK | ✅ |
+| L9 | 2026-08-20 | Clôture Phase 1 : `apiFetch` 100 % pages (option `redirectOn401: false` pour login), smoke test DB réel 29/29, migration 999 + users de test appliqués, `setup.sh`/`update-database.sh` bouclent maintenant les migrations, `.env` local → socket peer | ✅ |
 
 ---
 

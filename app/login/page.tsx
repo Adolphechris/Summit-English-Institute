@@ -6,6 +6,7 @@ import { useRouter } from 'next/navigation';
 import { Input } from '@/components/ui/Input';
 import { Button } from '@/components/ui/Button';
 import { ErrorMessage } from '@/components/ui/ErrorMessage';
+import { apiFetch } from '@/lib/apiClient';
 
 export default function LoginPage() {
   const router = useRouter();
@@ -20,17 +21,16 @@ export default function LoginPage() {
     setLoading(true);
 
     try {
-      const response = await fetch('/api/auth/login', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email, password }),
-      });
-
-      const data = await response.json();
-
-      if (!response.ok) {
-        throw new Error(data.error || 'Connexion échouée');
-      }
+      await apiFetch<{ user: { id: number; email: string; firstName?: string | null; lastName?: string | null } }>(
+        '/api/auth/login',
+        {
+          method: 'POST',
+          body: JSON.stringify({ email, password }),
+          // Un 401 ici = identifiants incorrects : on affiche l'erreur au lieu
+          // de rediriger vers /login (page déjà affichée).
+          redirectOn401: false,
+        }
+      );
 
       // Le token JWT est posé dans un cookie httpOnly par le serveur :
       // il n'est plus stocké dans localStorage (protection XSS).

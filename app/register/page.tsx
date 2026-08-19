@@ -6,6 +6,7 @@ import { useRouter } from 'next/navigation';
 import { Input } from '@/components/ui/Input';
 import { Button } from '@/components/ui/Button';
 import { ErrorMessage } from '@/components/ui/ErrorMessage';
+import { apiFetch } from '@/lib/apiClient';
 
 export default function RegisterPage() {
   const router = useRouter();
@@ -40,22 +41,18 @@ export default function RegisterPage() {
     setLoading(true);
 
     try {
-      const response = await fetch('/api/auth/register', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          email: formData.email,
-          password: formData.password,
-          firstName: formData.firstName,
-          lastName: formData.lastName,
-        }),
-      });
-
-      const data = await response.json();
-
-      if (!response.ok) {
-        throw new Error(data.error || 'Inscription échouée');
-      }
+      await apiFetch<{ user: { id: number; email: string; firstName?: string | null; lastName?: string | null } }>(
+        '/api/auth/register',
+        {
+          method: 'POST',
+          body: JSON.stringify({
+            email: formData.email,
+            password: formData.password,
+            firstName: formData.firstName,
+            lastName: formData.lastName,
+          }),
+        }
+      );
 
       // Le token JWT est posé dans un cookie httpOnly par le serveur :
       // il n'est plus stocké dans localStorage (protection XSS).

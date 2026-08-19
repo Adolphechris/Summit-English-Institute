@@ -5,6 +5,29 @@ Toutes les modifications notables de ce projet seront documentées dans ce fichi
 Le format est basé sur [Keep a Changelog](https://keepachangelog.com/fr/1.0.0/),
 et ce projet suit le [Semantic Versioning](https://semver.org/lang/fr/).
 
+## [0.2.1] - 2026-08-20
+
+### Ajouté
+- **Phase 1 clôturée** — `PROGRESS_TRACKER.md` passe Phase 1 à **100 % TERMINÉE**.
+- `scripts/smoke-db.js` : smoke test sur PostgreSQL **réel** (pas de mocks) —
+  schéma (18 tables requises), évaluation finale 999, contenu, hashs bcrypt,
+  flux INSERT/SELECT/ROLLBACK. **Résultat : 29/29**.
+- **Option `redirectOn401`** dans `apiFetch` : permet aux pages d'authentification
+  d'afficher les erreurs 401 sans redirection automatique vers /login.
+- `setup.sh` et `update-database.sh` appliquent désormais les migrations
+  `database/migrations/*.sql` (boucle idempotente).
+
+### Corrigé
+- **Migration 001 jamais appliquée** : l'évaluation finale `id=999` (requise pour le
+  certificat) était absente de la base réelle — aucun script ne chargeait les migrations.
+  La migration a été appliquée manuellement et les scripts corrigés.
+- **Comptes de test absents** de la base réelle : `database/seeds/test_users.sql` a été
+  appliqué (étudiant `test@summit-english.local` / `test1234`, admin).
+- **`DATABASE_URL` de dev pointait sur TCP** (`localhost`) alors que l'authentification
+  locale est `peer` (socket Unix) → repli sur `postgresql://...?host=/var/run/postgresql`.
+- Connexion client centralisée : login/register basculent sur `apiFetch` ; plus aucun
+  `fetch()` direct dans les pages.
+
 ## [0.2.0] - 2026-08-19
 
 ### Ajouté

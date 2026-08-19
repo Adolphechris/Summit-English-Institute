@@ -29,6 +29,13 @@ echo ""
 echo "   → Schéma de base"
 psql -d summit_english -f database/schema.sql
 
+# Appliquer les migrations (idempotentes) — ex. évaluation finale id=999
+echo "   → Migrations"
+for migration in database/migrations/*.sql; do
+    echo "      • $migration"
+    psql -d summit_english -f "$migration"
+done
+
 # Appliquer les seeds initiales
 echo "   → Données initiales"
 psql -d summit_english -f database/seeds/initial_data.sql

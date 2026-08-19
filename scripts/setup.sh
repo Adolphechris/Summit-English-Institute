@@ -75,6 +75,13 @@ psql -c "CREATE DATABASE summit_english;" 2>/dev/null || echo "   ⚠️  La bas
 echo "   Application du schéma..."
 psql -d summit_english -f database/schema.sql
 
+# Appliquer les migrations (idempotentes) — ex. évaluation finale id=999
+echo "   Application des migrations..."
+for migration in database/migrations/*.sql; do
+    echo "   → $migration"
+    psql -d summit_english -f "$migration"
+done
+
 # Appliquer les seeds
 echo "   Insertion des données initiales..."
 psql -d summit_english -f database/seeds/initial_data.sql

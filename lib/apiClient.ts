@@ -12,7 +12,17 @@ export class ApiError extends Error {
   }
 }
 
-export async function apiFetch<T = any>(path: string, options: RequestInit = {}): Promise<T> {
+export interface ApiFetchOptions extends RequestInit {
+  /**
+   * Désactiver la redirection automatique vers /login en cas de 401.
+   * Utile sur les pages d'authentification (login/register) où un 401
+   * correspond à des identifiants incorrects : on veut afficher l'erreur,
+   * pas rediriger.
+   */
+  redirectOn401?: boolean;
+}
+
+export async function apiFetch<T = any>(path: string, options: ApiFetchOptions = {}): Promise<T> {
   const headers: Record<string, string> = {
     ...(options.headers as Record<string, string> | undefined),
   };
@@ -21,12 +31,14 @@ export async function apiFetch<T = any>(path: string, options: RequestInit = {})
     headers['Content-Type'] = 'application/json';
   }
 
+  const { redirectOn401 = true, ...fetchOptions } = options;
+
   // Authentification par cookie httpOnly posé par /api/auth/login & /api/auth/register.
   // Le token JWT n'est JAMAIS stocké côté client (protection contre le vol par XSS).
-  const response = await fetch(path, { ...options, headers, credentials: 'include' });
+  const response = await fetch(path, { ...fetchOptions, headers, credentials: 'include' });
 
   if (response.status === 401) {
-    if (typeof window !== 'undefined') {
+    if (redirectOn401 && typeof window !== 'undefined') {
       window.location.href = '/login';
     }
     throw new ApiError(401, 'Non authentifié');
