@@ -17,11 +17,20 @@ describe('Rate limiting (mémoire locale)', () => {
     expect(isRateLimited('test:1', 3, 60_000)).toBe(true);
   });
 
-  it('se réinitialise après la fenêtre', () => {
-    // max=2, fenêtre très courte pour forcer l'expiration
-    expect(isRateLimited('test:2', 2, 1)).toBe(false);
-    expect(isRateLimited('test:2', 2, 1)).toBe(false);
-    expect(isRateLimited('test:2', 2, 1)).toBe(true);
+  it('se réinitialise après la fenêtre (timers simulés)', () => {
+    jest.useFakeTimers();
+    try {
+      // max=2, fenêtre 10 000 ms
+      expect(isRateLimited('test:2', 2, 10_000)).toBe(false);
+      expect(isRateLimited('test:2', 2, 10_000)).toBe(false);
+      expect(isRateLimited('test:2', 2, 10_000)).toBe(true);
+
+      // Une fois la fenêtre écoulée, le compteur repart à zéro
+      jest.advanceTimersByTime(10_001);
+      expect(isRateLimited('test:2', 2, 10_000)).toBe(false);
+    } finally {
+      jest.useRealTimers();
+    }
   });
 
   it('supporte un store persistant asynchrone (Redis/Upstash) branché via setRateLimitStore', async () => {

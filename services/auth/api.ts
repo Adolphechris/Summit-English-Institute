@@ -10,8 +10,38 @@ import type { User, UserRole } from '@/types';
 
 const SALT_ROUNDS = 10;
 
-// Ligne de base de la table users (inclut le hash, jamais renvoyé dans les réponses API)
-type AuthUserRow = User & { password_hash: string };
+// Colonnes SQL de la table users (snake_case)
+type UserDbRow = {
+  id: number;
+  email: string;
+  role: string;
+  status: string;
+  first_name: string | null;
+  last_name: string | null;
+  preferred_language: string | null;
+  created_at: Date;
+  updated_at: Date;
+  last_login_at: Date | null;
+  password_hash?: string;
+};
+
+// Mapper une ligne SQL (snake_case) vers le type métier User (camelCase)
+function mapUserRow(row: UserDbRow): User {
+  return {
+    id: row.id,
+    email: row.email,
+    role: row.role as UserRole,
+    status: row.status as User['status'],
+    firstName: row.first_name || undefined,
+    lastName: row.last_name || undefined,
+    preferredLanguage: row.preferred_language || 'fr',
+    createdAt: row.created_at,
+    updatedAt: row.updated_at,
+    lastLoginAt: row.last_login_at || undefined,
+  };
+}
+
+const USER_SELECT_COLUMNS = `id, email, role, status, first_name, last_name, preferred_language, created_at, updated_at, last_login_at`;
 
 // Créer un utilisateur
 export async function createUser(data: {
@@ -23,10 +53,10 @@ export async function createUser(data: {
 }): Promise<User> {
   const hashedPassword = await hash(data.password, SALT_ROUNDS);
 
-  const result = await queryOne<User>(
+  const result = await queryOne<UserDbRow>(
     `INSERT INTO users (email, password_hash, first_name, last_name, role)
      VALUES ($1, $2, $3, $4, $5)
-     RETURNING id, email, role, status, first_name, last_name, preferred_language, created_at, updated_at, last_login_at`,
+     RETURNING ${USER_SELECT_COLUMNS}`,
     [data.email.toLowerCase(), hashedPassword, data.firstName || null, data.lastName || null, data.role || 'student']
   );
 
@@ -34,13 +64,13 @@ export async function createUser(data: {
     throw new Error('Failed to create user');
   }
 
-  return result;
+  return mapUserRow(result);
 }
 
 // Authentifier un utilisateur
 export async function authenticateUser(email: string, password: string): Promise<User | null> {
-  const user = await queryOne<AuthUserRow>(
-    `SELECT id, email, password_hash, role, status, first_name, last_name, preferred_language, created_at, updated_at, last_login_at
+  const user = await queryOne<UserDbRow & { password_hash: string }>(
+    `SELECT ${USER_SELECT_COLUMNS}, password_hash
      FROM users
      WHERE email = $1 AND status = 'active'`,
     [email.toLowerCase()]
@@ -61,7 +91,7 @@ export async function authenticateUser(email: string, password: string): Promise
     [user.id]
   );
 
-  return user;
+  return mapUserRow(user);
 }
 
 // Créer une session
@@ -134,27 +164,27 @@ export async function getRequestUserId(request: Request): Promise<number | null>
 
 // Trouver un utilisateur par token
 export async function findUserByToken(token: string): Promise<User | null> {
-  const result = await queryOne<User>(
-    `SELECT u.id, u.email, u.role, u.status, u.first_name, u.last_name, u.preferred_language, u.created_at, u.updated_at, u.last_login_at
+  const result = await queryOne<UserDbRow>(
+    `SELECT u.${USER_SELECT_COLUMNS}
      FROM users u
      JOIN sessions s ON u.id = s.user_id
      WHERE s.token = $1 AND s.expires_at > NOW() AND u.status = 'active'`,
     [token]
   );
 
-  return result || null;
+  return result ? mapUserRow(result) : null;
 }
 
 // Trouver un utilisateur par identifiant (utilisé par GET /api/auth/me)
 export async function findUserById(userId: number): Promise<User | null> {
-  const result = await queryOne<User>(
-    `SELECT id, email, role, status, first_name, last_name, preferred_language, created_at, updated_at, last_login_at
+  const result = await queryOne<UserDbRow>(
+    `SELECT ${USER_SELECT_COLUMNS}
      FROM users
      WHERE id = $1 AND status = 'active'`,
     [userId]
   );
 
-  return result || null;
+  return result ? mapUserRow(result) : null;
 }
 
 // Déconnexion

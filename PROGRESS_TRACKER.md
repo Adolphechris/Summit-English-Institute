@@ -34,6 +34,8 @@
 | 0.14 | Tests de régression (40 tests) | ✅ |
 | 0.15 | **Validation : tsc 0 · ESLint 0 · 40/40 tests · `next build` OK** | ✅ |
 
+> ✅ Phase 0 consolidée : au 2026-08-19, l'ensemble du projet compile avec `tsc --noEmit` (0 erreur), passe `eslint --max-warnings=0` (0 problème), exécute **60/60 tests Jest stables** (8 suites) et build Next.js `BUILD_EXIT=0`.
+
 ## PHASE 1 — Durcissement 🔄
 
 | # | Tâche | Statut |
@@ -61,6 +63,8 @@
 | L4 | 2026-08-18 | 0.15 `next build` (2 essais, config ESLint) | ✅ BUILD_EXIT=0 |
 | L5 | 2026-08-18 | Phase 1.1→1.6 (auth/cookie/middleware, progression, révisions) | ✅ |
 | L6 | 2026-08-18 | Phase 1.4/1.8/1.9/1.10 (UI, eslint, scripts, docs) | ✅ |
+| L7 | 2026-08-19 | Mapping SQL→camelCase (`mapUserRow`) + test rate-limit déterministe | ✅ |
+| L8 | 2026-08-19 | Validation générale : tsc 0 · ESLint 0 · 60/60 tests · `next build` OK | ✅ |
 
 ---
 
