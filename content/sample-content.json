@@ -1,0 +1,282 @@
+{
+  "course": {
+    "id": 1,
+    "title": "English for IT & Cybersecurity",
+    "description": "Formation intensive de 20 jours en anglais professionnel, informatique et cybersécurité.",
+    "version": "1.0",
+    "maxDays": 20,
+    "passingScore": 75
+  },
+  "levels": [
+    {
+      "id": 1,
+      "number": 1,
+      "title": "English Sentence Foundations",
+      "objective": "Reconstruire les mécanismes fondamentaux permettant de produire rapidement une phrase anglaise correcte.",
+      "passingScore": 75,
+      "orderIndex": 1
+    },
+    {
+      "id": 2,
+      "number": 2,
+      "title": "Functional Verb System",
+      "objective": "Reconstruire les automatismes de conjugaison indispensables pour communiquer.",
+      "passingScore": 75,
+      "orderIndex": 2
+    },
+    {
+      "id": 3,
+      "number": 3,
+      "title": "Functional Grammar",
+      "objective": "Maîtriser les structures grammaticales nécessaires à la production de phrases correctes.",
+      "passingScore": 75,
+      "orderIndex": 3
+    },
+    {
+      "id": 4,
+      "number": 4,
+      "title": "Active Conversation",
+      "objective": "Transformer les connaissances grammaticales en production conversationnelle active.",
+      "passingScore": 75,
+      "orderIndex": 4
+    },
+    {
+      "id": 5,
+      "number": 5,
+      "title": "Everyday & Professional English",
+      "objective": "Maîtriser les expressions courantes et professionnelles utilisées au quotidien.",
+      "passingScore": 75,
+      "orderIndex": 5
+    },
+    {
+      "id": 6,
+      "number": 6,
+      "title": "IT English",
+      "objective": "Acquérir le vocabulaire et les expressions nécessaires pour comprendre et utiliser l'anglais informatique.",
+      "passingScore": 75,
+      "orderIndex": 6
+    },
+    {
+      "id": 7,
+      "number": 7,
+      "title": "Cybersecurity English",
+      "objective": "Comprendre le vocabulaire et les formulations rencontrés dans la cybersécurité.",
+      "passingScore": 75,
+      "orderIndex": 7
+    },
+    {
+      "id": 8,
+      "number": 8,
+      "title": "University & Professional Integration",
+      "objective": "Se préparer à fonctionner dans un environnement universitaire et professionnel anglophone.",
+      "passingScore": 75,
+      "orderIndex": 8
+    }
+  ],
+  "modules": [
+    {
+      "id": 101,
+      "levelId": 1,
+      "title": "Sentence Structure",
+      "objective": "Comprendre et construire la structure de base d'une phrase anglaise.",
+      "orderIndex": 1
+    },
+    {
+      "id": 102,
+      "levelId": 1,
+      "title": "Basic Questions & Negation",
+      "objective": "Construire des questions et des phrases négatives simples.",
+      "orderIndex": 2
+    },
+    {
+      "id": 201,
+      "levelId": 2,
+      "title": "Present System",
+      "objective": "Maîtriser le Present Simple et le Present Continuous.",
+      "orderIndex": 1
+    },
+    {
+      "id": 202,
+      "levelId": 2,
+      "title": "Past System",
+      "objective": "Maîtriser le Past Simple et le Past Continuous.",
+      "orderIndex": 2
+    },
+    {
+      "id": 203,
+      "levelId": 2,
+      "title": "Future & Modals",
+      "objective": "Maîtriser le futur et les verbes modaux.",
+      "orderIndex": 3
+    },
+    {
+      "id": 301,
+      "levelId": 3,
+      "title": "Grammar Core",
+      "objective": "Articles, prépositions, comparatifs, quantificateurs.",
+      "orderIndex": 1
+    },
+    {
+      "id": 401,
+      "levelId": 4,
+      "title": "Conversation Patterns",
+      "objective": "Apprendre les patrons de conversation fonctionnels.",
+      "orderIndex": 1
+    },
+    {
+      "id": 601,
+      "levelId": 6,
+      "title": "IT Foundations",
+      "objective": "Vocabulaire informatique fondamental.",
+      "orderIndex": 1
+    },
+    {
+      "id": 602,
+      "levelId": 6,
+      "title": "Systems & Networking",
+      "objective": "Vocabulaire des systèmes et réseaux.",
+      "orderIndex": 2
+    },
+    {
+      "id": 701,
+      "levelId": 7,
+      "title": "Security Foundations",
+      "objective": "Concepts fondamentaux de la cybersécurité.",
+      "orderIndex": 1
+    },
+    {
+      "id": 702,
+      "levelId": 7,
+      "title": "Security Operations",
+      "objective": "Vocabulaire des opérations de sécurité.",
+      "orderIndex": 2
+    }
+  ],
+  "skills": [
+    { "code": "sentence.structure", "name": "Sentence Structure", "domain": "grammar", "difficulty": "A", "isCritical": true },
+    { "code": "questions.basic", "name": "Basic Questions", "domain": "grammar", "difficulty": "A", "isCritical": true },
+    { "code": "negation.basic", "name": "Basic Negation", "domain": "grammar", "difficulty": "A", "isCritical": false },
+    { "code": "conjugation.present", "name": "Present Tenses", "domain": "conjugation", "difficulty": "A", "isCritical": true },
+    { "code": "conjugation.past", "name": "Past Tenses", "domain": "conjugation", "difficulty": "A", "isCritical": true },
+    { "code": "conjugation.future", "name": "Future & Modals", "domain": "conjugation", "difficulty": "A", "isCritical": false },
+    { "code": "conjugation.irregular", "name": "Irregular Verbs", "domain": "conjugation", "difficulty": "A", "isCritical": true },
+    { "code": "grammar.prepositions", "name": "Prepositions", "domain": "grammar", "difficulty": "B", "isCritical": false },
+    { "code": "conversation.basics", "name": "Conversation Basics", "domain": "conversation", "difficulty": "A", "isCritical": true },
+    { "code": "it.vocabulary.basic", "name": "Basic IT Vocabulary", "domain": "it", "difficulty": "A", "isCritical": true },
+    { "code": "it.networking", "name": "Networking", "domain": "it", "difficulty": "A", "isCritical": true },
+    { "code": "cyber.fundamentals", "name": "Security Fundamentals", "domain": "cybersecurity", "difficulty": "B", "isCritical": false },
+    { "code": "cyber.operations", "name": "Security Operations", "domain": "cybersecurity", "difficulty": "B", "isCritical": false },
+    { "code": "cyber.actions", "name": "Security Action Verbs", "domain": "cybersecurity", "difficulty": "A", "isCritical": true }
+  ],
+  "vocabulary": [
+    { "word": "deploy", "definition": "Mettre en production / déployer", "translation": "déployer", "example": "We need to deploy the application tonight.", "itExample": "Deploy the new version to the production server.", "domain": "it", "level": "A", "skillCode": "it.vocabulary.basic" },
+    { "word": "configure", "definition": "Configurer", "translation": "configurer", "example": "Please configure the firewall rules.", "itExample": "Configure the server before starting the service.", "domain": "it", "level": "A", "skillCode": "it.vocabulary.basic" },
+    { "word": "monitor", "definition": "Surveiller", "translation": "surveiller", "example": "We monitor the network 24/7.", "itExample": "Monitor server performance and traffic.", "domain": "it", "level": "A", "skillCode": "it.vocabulary.basic" },
+    { "word": "detect", "definition": "Détecter", "translation": "détecter", "example": "The system detected suspicious activity.", "itExample": "Detect anomalies in network traffic.", "domain": "cybersecurity", "level": "A", "skillCode": "cyber.operations" },
+    { "word": "vulnerability", "definition": "Vulnérabilité", "translation": "vulnérabilité", "example": "This vulnerability must be patched immediately.", "itExample": "Scan for vulnerabilities in the system.", "domain": "cybersecurity", "level": "A", "skillCode": "cyber.fundamentals" },
+    { "word": "encrypt", "definition": "Chiffrer", "translation": "chiffrer", "example": "Always encrypt sensitive data.", "itExample": "Encrypt the communication channel.", "domain": "cybersecurity", "level": "A", "skillCode": "cyber.actions" }
+  ],
+  "expressions": [
+    { "expression": "I need to check...", "meaning": "Je dois vérifier...", "example": "I need to check the server logs.", "classification": "professional", "difficulty": "A" },
+    { "expression": "Could you help me with...?", "meaning": "Pourriez-vous m'aider avec...?", "example": "Could you help me with this error?", "classification": "professional", "difficulty": "A" },
+    { "expression": "The system needs to be updated.", "meaning": "Le système doit être mis à jour.", "example": "The system needs to be updated before deployment.", "classification": "it", "difficulty": "A" },
+    { "expression": "I can't access the server.", "meaning": "Je ne peux pas accéder au serveur.", "example": "I can't access the server. Can you check the firewall?", "classification": "it", "difficulty": "A" }
+  ],
+  "questions": [
+    {
+      "id": 1,
+      "type": "multiple_choice",
+      "questionText": "Choose the correct form: 'I ___ to check the server.'",
+      "difficulty": "A",
+      "skillCode": "sentence.structure",
+      "correctAnswer": "need",
+      "options": ["need", "needs", "needing", "needed"],
+      "explanation": "'I' prend la forme de base du verbe. 'Need' est correct à la première personne."
+    },
+    {
+      "id": 2,
+      "type": "fill_blank",
+      "questionText": "Complete: 'We need to ___ the new version tonight.'",
+      "difficulty": "A",
+      "skillCode": "it.vocabulary.basic",
+      "correctAnswer": "deploy",
+      "explanation": "'Deploy' signifie mettre en production."
+    },
+    {
+      "id": 3,
+      "type": "multiple_choice",
+      "questionText": "What is the past tense of 'go'?",
+      "difficulty": "A",
+      "skillCode": "conjugation.irregular",
+      "correctAnswer": "went",
+      "options": ["goed", "went", "gone", "going"],
+      "explanation": "Le past simple de 'go' est 'went'."
+    },
+    {
+      "id": 4,
+      "type": "multiple_choice",
+      "questionText": "Choose the correct sentence: 'The application ___ working.'",
+      "difficulty": "A",
+      "skillCode": "it.vocabulary.basic",
+      "correctAnswer": "is not",
+      "options": ["not is", "is not", "no is", "is no"],
+      "explanation": "La négation avec 'be' utilise 'is not' ou 'isn't'."
+    },
+    {
+      "id": 5,
+      "type": "fill_blank",
+      "questionText": "Complete: 'The firewall ___ all unauthorized traffic.'",
+      "difficulty": "A",
+      "skillCode": "cyber.operations",
+      "correctAnswer": "blocks",
+      "explanation": "'Block' signifie bloquer. Au Present Simple, troisième personne: 'blocks'."
+    },
+    {
+      "id": 6,
+      "type": "multiple_choice",
+      "questionText": "Which word means 'vulnérabilité' in IT security?",
+      "difficulty": "A",
+      "skillCode": "cyber.fundamentals",
+      "correctAnswer": "vulnerability",
+      "options": ["vulnerability", "threat", "attack", "risk"],
+      "explanation": "'Vulnerability' signifie vulnérabilité."
+    },
+    {
+      "id": 7,
+      "type": "transformation",
+      "questionText": "Transform into a question: 'You can access the server.'",
+      "difficulty": "A",
+      "skillCode": "questions.basic",
+      "correctAnswer": "Can you access the server?",
+      "explanation": "Avec 'can', on déplace l'auxiliaire avant le sujet."
+    },
+    {
+      "id": 8,
+      "type": "scenario",
+      "questionText": "You need to report an incident. Write a short message to your team.",
+      "difficulty": "B",
+      "skillCode": "conversation.professional",
+      "correctAnswer": "Team, we detected an anomaly. Please investigate immediately.",
+      "explanation": "Un message professionnel est direct, clair et inclut l'action requise."
+    },
+    {
+      "id": 9,
+      "type": "multiple_choice",
+      "questionText": "Choose the correct preposition: 'The server is ___ the network.'",
+      "difficulty": "A",
+      "skillCode": "grammar.prepositions",
+      "correctAnswer": "on",
+      "options": ["in", "on", "at", "to"],
+      "explanation": "'On the network' est l'expression correcte."
+    },
+    {
+      "id": 10,
+      "type": "error_correction",
+      "questionText": "Correct the error: 'She don't have access to the database.'",
+      "difficulty": "A",
+      "skillCode": "conjugation.present",
+      "correctAnswer": "She doesn't have access to the database.",
+      "explanation": "À la troisième personne du singulier, 'do' devient 'does'."
+    }
+  ]
+}
