@@ -2,8 +2,54 @@ import type { Metadata } from 'next';
 import './globals.css';
 
 export const metadata: Metadata = {
-  title: 'Summit English Institute',
-  description: 'Formation intensive en anglais professionnel, informatique et cybersécurité',
+  metadataBase: new URL('https://english.iumorave-ac.org'),
+  title: {
+    default: 'Summit English Institute — Formation Anglais IT & Cybersécurité',
+    template: '%s | Summit English Institute',
+  },
+  description:
+    'Institut de formation intensive en anglais spécialisé pour développeurs, ingénieurs et spécialistes en cybersécurité. 8 niveaux, 20 jours, suivi individuel et certification.',
+  keywords: [
+    'anglais informatique',
+    'cybersécurité anglais',
+    'cours anglais développeur',
+    'Summit English Institute',
+    'IUMORAVE',
+    'formation anglais professionnel',
+    'anglais technique IT',
+  ],
+  authors: [{ name: 'Summit English Institute' }],
+  creator: 'IUMORAVE Academic Institute',
+  publisher: 'IUMORAVE Academic Institute',
+  robots: {
+    index: true,
+    follow: true,
+    googleBot: {
+      index: true,
+      follow: true,
+      'max-video-preview': -1,
+      'max-image-preview': 'large',
+      'max-snippet': -1,
+    },
+  },
+  openGraph: {
+    type: 'website',
+    locale: 'fr_FR',
+    url: 'https://english.iumorave-ac.org',
+    siteName: 'Summit English Institute',
+    title: 'Summit English Institute — Anglais IT & Cybersécurité',
+    description:
+      'Master the English language for Software Engineering and Cybersecurity. Program in 20 days with 8 CEFR levels.',
+  },
+  twitter: {
+    card: 'summary_large_image',
+    title: 'Summit English Institute — Anglais IT & Cybersécurité',
+    description:
+      'Formation accélérée en anglais technique pour développeurs et professionnels de la cybersécurité.',
+  },
+  alternates: {
+    canonical: 'https://english.iumorave-ac.org',
+  },
 };
 
 export default function RootLayout({
@@ -11,11 +57,29 @@ export default function RootLayout({
 }: {
   children: React.ReactNode;
 }) {
+  const jsonLd = {
+    '@context': 'https://schema.org',
+    '@type': 'EducationalOrganization',
+    name: 'Summit English Institute',
+    url: 'https://english.iumorave-ac.org',
+    description:
+      'Institut de formation intensive en anglais spécialisé pour développeurs, ingénieurs et spécialistes en cybersécurité.',
+    parentOrganization: {
+      '@type': 'EducationalOrganization',
+      name: 'IUMORAVE Academic Institute',
+      url: 'https://iumorave-ac.org',
+    },
+  };
+
   return (
     <html lang="fr">
-      <body>
-        {children}
-      </body>
+      <head>
+        <script
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
+        />
+      </head>
+      <body>{children}</body>
     </html>
   );
 }
