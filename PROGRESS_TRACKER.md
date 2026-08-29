@@ -10,9 +10,9 @@
 | **Phase 0 — Corrections bloquantes (MVP local)** | ✅ **TERMINÉE — build + tests verts** |
 | **Phase 1 — Durcissement** | ✅ **TERMINÉE — toutes les sous-tâches clôturées (2026-08-20)** |
 | **Phase 2 — Contenu + Admin + Profil + Git Push** | ✅ **TERMINÉE — clôturée le 2026-08-29** |
+| **Phase 5 — Migration Google Firebase (Firestore + Gemini AI)** | ✅ **TERMINÉE — commit `cb06801` — 2026-08-29** |
 | Phase 3 — Tests bout-en-bout & Qualification | ⬜ À faire |
 | Phase 4 — Finition UX/UI Responsive | ⬜ À faire |
-| Phase 5 — Déploiement Production (Vercel + DB Cloud) | ⬜ À planifier |
 
 ## PHASE 0 — Terminée ✅ (100 %)
 

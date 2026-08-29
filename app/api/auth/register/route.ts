@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server';
 import { createUser, createSession } from '@/services/auth/api';
-import { getUserByEmail } from '@/services/database/firestore-repository';
+import { getUserByEmail, initOrUpdateProgress } from '@/services/database/firestore-repository';
 import { isValidEmail, isValidPassword, normalizeEmail, sanitizeName } from '@/lib/validate';
 import { isRateLimitedAsync, clearRateLimitAsync } from '@/lib/rateLimit';
 
@@ -52,6 +52,14 @@ export async function POST(request: Request) {
     });
 
     const token = await createSession(user.id);
+
+    // Initialiser la progression à J1, Niveau 1, 0%
+    await initOrUpdateProgress(user.id, {
+      currentLevel: 1,
+      currentDay: 1,
+      overallProgress: 0,
+      isCompleted: false,
+    });
 
     // Réinitialiser le compteur d'inscriptions en cas de succès
     await clearRateLimitAsync(`register:${normalizedEmail}`);

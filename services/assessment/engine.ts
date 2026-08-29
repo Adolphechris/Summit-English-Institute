@@ -7,7 +7,6 @@ import {
   listQuestions,
   getUserSkillProgress,
   getQuestionsByIds,
-  createQuestion,
   getFirestore,
 } from '@/services/database/firestore-repository';
 import { COLLECTIONS } from '@/services/database/firestore-schema';

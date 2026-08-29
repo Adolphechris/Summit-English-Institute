@@ -43,10 +43,6 @@ export const config = {
     secret: requiredEnv('AUTH_SECRET', 'dev-only-secret-for-local-testing'),
     expiry: process.env.AUTH_EXPIRY || '7d',
   },
-  database: {
-    // URL PostgreSQL (conservé pour rétrocompatibilité locale si besoin)
-    url: process.env.DATABASE_URL || 'postgresql://user:password@localhost:5432/summit_english',
-  },
   firebase: {
     projectId: process.env.FIREBASE_PROJECT_ID || process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID || 'summit-english-institute',
     clientEmail: process.env.FIREBASE_CLIENT_EMAIL || '',
