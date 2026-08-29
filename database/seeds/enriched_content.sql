@@ -105,7 +105,7 @@ INSERT INTO lessons (module_id, title, objective, explanation, examples, vocabul
 INSERT INTO questions (type, question_text, context, difficulty, skill_id, lesson_id, explanation, tags, status) VALUES
 -- Niveau 1 — Sentence Structure
 ('multiple_choice', 'Choose the correct sentence: ''The server ___ down.''', 'IT context', 'A', 1, NULL, 'Is down indique que le serveur est hors service.', ARRAY['it', 'sentence'], 'active'),
-('fill_blank', 'Complete: ''___ need to access the database.'', NULL, 'A', 2, NULL, 'I est le pronom sujet à la première personne.', ARRAY['pronouns'], 'active'),
+('fill_blank', 'Complete: "___ need to access the database."', NULL, 'A', 2, NULL, 'I est le pronom sujet à la première personne.', ARRAY['pronouns'], 'active'),
 ('multiple_choice', 'Which is a correct negative? ''She ___ working.''', NULL, 'A', 3, NULL, 'Is not ou isn''t est la négation correcte de is.', ARRAY['negation', 'auxiliaries'], 'active'),
 ('error_correction', 'Correct: ''They is updating the system.''', NULL, 'A', 2, NULL, 'They sont → they are.', ARRAY['conjugation', 'present'], 'active'),
 ('multiple_choice', 'Choose the correct preposition: ''The server is ___ the network.''', NULL, 'A', 13, NULL, 'On the network est l''expression correcte.', ARRAY['prepositions'], 'active'),

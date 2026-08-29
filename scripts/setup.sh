@@ -83,8 +83,11 @@ for migration in database/migrations/*.sql; do
 done
 
 # Appliquer les seeds
-echo "   Insertion des données initiales..."
+echo "   Insertion des données initiales et du contenu pédagogique (20 jours)..."
 psql -d summit_english -f database/seeds/initial_data.sql
+psql -d summit_english -f database/seeds/enriched_content.sql
+psql -d summit_english -f database/seeds/levels_3_to_8_content.sql
+psql -d summit_english -f database/seeds/massive_questions.sql
 psql -d summit_english -f database/seeds/test_users.sql
 
 echo ""

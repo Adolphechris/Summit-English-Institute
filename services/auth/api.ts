@@ -191,3 +191,12 @@ export async function findUserById(userId: number): Promise<User | null> {
 export async function deleteSession(token: string): Promise<void> {
   await execute(`DELETE FROM sessions WHERE token = $1`, [token]);
 }
+
+// Vérifier si la requête provient d'un administrateur
+export async function getRequestAdminUser(request: Request): Promise<User | null> {
+  const userId = await getRequestUserId(request);
+  if (!userId) return null;
+  const user = await findUserById(userId);
+  if (!user || (user.role as string).toLowerCase() !== 'admin') return null;
+  return user;
+}

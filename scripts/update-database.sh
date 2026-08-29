@@ -43,6 +43,8 @@ psql -d summit_english -f database/seeds/initial_data.sql
 # Appliquer le contenu enrichi
 echo "   → Contenu enrichi (20 jours)"
 psql -d summit_english -f database/seeds/enriched_content.sql
+psql -d summit_english -f database/seeds/levels_3_to_8_content.sql
+psql -d summit_english -f database/seeds/massive_questions.sql
 
 # Appliquer les utilisateurs de test
 echo "   → Utilisateurs de test"
