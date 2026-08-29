@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server';
-import { query, queryOne } from '@/services/database/client';
+import { getAssessmentById, getQuestionsByIds, listLevels, listModules } from '@/services/database/firestore-repository';
 import { getRequestUserId } from '@/services/auth/api';
 
 // GET /api/assessments/[id]
@@ -15,61 +15,41 @@ export async function GET(request: Request, { params }: { params: { id: string }
       return NextResponse.json({ error: "Identifiant d'évaluation invalide" }, { status: 400 });
     }
 
-    // Récupérer l'évaluation
-    const assessment = await queryOne(
-      `SELECT a.*, lvl.title as level_title, m.title as module_title
-       FROM assessments a
-       LEFT JOIN levels lvl ON a.level_id = lvl.id
-       LEFT JOIN modules m ON a.module_id = m.id
-       WHERE a.id = $1 AND a.status = 'active'`,
-      [assessmentId]
-    );
-
-    if (!assessment) {
+    const assessment = await getAssessmentById(assessmentId);
+    if (!assessment || assessment.status === 'archived') {
       return NextResponse.json({ error: 'Évaluation introuvable' }, { status: 404 });
     }
 
-    // Récupérer les questions liées à l'évaluation avec leurs options
-    const questionRows = await query(
-      `SELECT q.id, q.type, q.question_text, q.context, q.difficulty, q.skill_id,
-              a.answer_text, a.order_index
-       FROM assessment_questions aq
-       JOIN questions q ON aq.question_id = q.id
-       LEFT JOIN answers a ON q.id = a.question_id
-       WHERE aq.assessment_id = $1 AND q.status = 'active'
-       ORDER BY aq.order_index ASC, a.order_index ASC`,
-      [assessmentId]
-    );
+    const [allLevels, allModules] = await Promise.all([listLevels(), listModules()]);
+    const level = allLevels.find((l) => l.id === assessment.levelId);
+    const moduleItem = allModules.find((m) => m.id === assessment.moduleId);
 
-    const questions = formatQuestions(questionRows);
+    // Récupérer les questions liées
+    const questions = await getQuestionsByIds(assessment.questionIds || []);
 
-    return NextResponse.json({ assessment, questions });
+    const formattedQuestions = questions.map((q) => ({
+      id: q.id,
+      type: q.type,
+      questionText: q.questionText,
+      context: q.context || null,
+      difficulty: q.difficulty,
+      skillId: q.skillId,
+      options: q.options || [],
+    }));
+
+    return NextResponse.json({
+      assessment: {
+        id: assessment.id,
+        title: assessment.title,
+        assessment_type: assessment.assessmentType,
+        passing_score: assessment.passingScore,
+        level_title: level?.title || null,
+        module_title: moduleItem?.title || null,
+      },
+      questions: formattedQuestions,
+    });
   } catch (error) {
     console.error('[ASSESSMENT DETAILS ERROR]', error);
     return NextResponse.json({ error: 'Erreur serveur' }, { status: 500 });
   }
-}
-
-function formatQuestions(rows: any[]): any[] {
-  const questionMap = new Map<number, any>();
-
-  for (const row of rows) {
-    if (!questionMap.has(row.id)) {
-      questionMap.set(row.id, {
-        id: row.id,
-        type: row.type,
-        questionText: row.question_text,
-        context: row.context,
-        difficulty: row.difficulty,
-        skillId: row.skill_id,
-        options: [] as string[],
-      });
-    }
-
-    if (row.answer_text) {
-      questionMap.get(row.id).options.push(row.answer_text);
-    }
-  }
-
-  return Array.from(questionMap.values());
 }

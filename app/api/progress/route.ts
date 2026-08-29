@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server';
-import { query } from '@/services/database/client';
+import { getUserSkillProgress, listSkills } from '@/services/database/firestore-repository';
 import { getRequestUserId } from '@/services/auth/api';
 
 // GET /api/progress
@@ -10,31 +10,34 @@ export async function GET(request: Request) {
       return NextResponse.json({ error: 'Non authentifié' }, { status: 401 });
     }
 
-    // Récupérer la progression par compétence
-    const skillProgress = await query(
-      `SELECT s.domain, AVG(sp.mastery_score) as progress
-       FROM skill_progress sp
-       JOIN skills s ON sp.skill_id = s.id
-       WHERE sp.user_id = $1
-       GROUP BY s.domain`,
-      [userId]
-    );
+    const [userSkillProgress, allSkills] = await Promise.all([
+      getUserSkillProgress(userId),
+      listSkills(),
+    ]);
+
+    const skillMap = new Map(allSkills.map((s) => [s.id, s]));
+
+    const domainTotals: Record<string, { totalScore: number; count: number }> = {};
+
+    userSkillProgress.forEach((sp) => {
+      const skill = skillMap.get(sp.skillId);
+      const domain = skill?.domain || 'grammar';
+      if (!domainTotals[domain]) domainTotals[domain] = { totalScore: 0, count: 0 };
+      domainTotals[domain].totalScore += sp.masteryScore || 0;
+      domainTotals[domain].count += 1;
+    });
 
     const domainProgress = [
-      { domain: 'grammar', progress: 0 },
-      { domain: 'conversation', progress: 0 },
-      { domain: 'it', progress: 0 },
-      { domain: 'cybersecurity', progress: 0 },
-      { domain: 'professional', progress: 0 },
-      { domain: 'academic', progress: 0 },
-    ];
-
-    // Mettre à jour avec les vraies valeurs
-    skillProgress.forEach((sp: any) => {
-      const domain = domainProgress.find((d) => d.domain === sp.domain);
-      if (domain) {
-        domain.progress = Math.round(sp.progress || 0);
-      }
+      'grammar',
+      'conversation',
+      'it',
+      'cybersecurity',
+      'professional',
+      'academic',
+    ].map((domain) => {
+      const data = domainTotals[domain];
+      const avg = data && data.count > 0 ? Math.round(data.totalScore / data.count) : 0;
+      return { domain, progress: avg };
     });
 
     return NextResponse.json({ domainProgress });

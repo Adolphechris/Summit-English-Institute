@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server';
-import { query, queryOne } from '@/services/database/client';
+import { getUserProgress, getAssessmentById } from '@/services/database/firestore-repository';
 import { selectQuestionsForAssessment } from '@/services/assessment/engine';
 import { APP_CONFIG } from '@/lib/constants';
 import { getRequestUserId } from '@/services/auth/api';
@@ -12,13 +12,8 @@ export async function GET(request: Request) {
       return NextResponse.json({ error: 'Non authentifié' }, { status: 401 });
     }
 
-    // Vérifier les prérequis
-    const progress = await queryOne(
-      `SELECT overall_progress FROM progress WHERE user_id = $1`,
-      [userId]
-    );
-
-    const overallProgress = progress?.overall_progress || 0;
+    const progress = await getUserProgress(userId);
+    const overallProgress = progress?.overallProgress || 0;
 
     if (overallProgress < 70) {
       return NextResponse.json(
@@ -27,17 +22,11 @@ export async function GET(request: Request) {
       );
     }
 
-    // Récupérer l'évaluation finale
-    const assessment = await queryOne(
-      `SELECT * FROM assessments WHERE id = $1 AND status = 'active'`,
-      [APP_CONFIG.finalAssessmentId]
-    );
-
-    if (!assessment) {
+    const assessment = await getAssessmentById(APP_CONFIG.finalAssessmentId);
+    if (!assessment || assessment.status === 'archived') {
       return NextResponse.json({ error: 'Évaluation finale non disponible' }, { status: 404 });
     }
 
-    // Sélectionner les questions de manière cumulative
     const questions = await selectQuestionsForAssessment({
       assessmentId: assessment.id,
       userId,

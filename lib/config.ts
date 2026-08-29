@@ -44,9 +44,18 @@ export const config = {
     expiry: process.env.AUTH_EXPIRY || '7d',
   },
   database: {
-    // Fail-closed : DATABASE_URL obligatoire en production.
-    url: requiredEnv('DATABASE_URL', 'postgresql://user:password@localhost:5432/summit_english'),
+    // URL PostgreSQL (conservé pour rétrocompatibilité locale si besoin)
+    url: process.env.DATABASE_URL || 'postgresql://user:password@localhost:5432/summit_english',
+  },
+  firebase: {
+    projectId: process.env.FIREBASE_PROJECT_ID || process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID || 'summit-english-institute',
+    clientEmail: process.env.FIREBASE_CLIENT_EMAIL || '',
+    privateKey: process.env.FIREBASE_PRIVATE_KEY || '',
+  },
+  googleAI: {
+    apiKey: process.env.GOOGLE_AI_API_KEY || '',
   },
 };
 
 export type Config = typeof config;
+

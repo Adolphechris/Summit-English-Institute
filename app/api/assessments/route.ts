@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server';
-import { query, queryOne } from '@/services/database/client';
+import { listAssessments, listLevels, listModules } from '@/services/database/firestore-repository';
 import { createAssessmentWithQuestions } from '@/services/assessment/engine';
 import { getRequestUserId } from '@/services/auth/api';
 import type { AssessmentDistribution } from '@/types';
@@ -18,35 +18,33 @@ export async function GET(request: Request) {
     const levelId = url.searchParams.get('levelId');
     const type = url.searchParams.get('type');
 
-    let queryText = `
-      SELECT a.*, lvl.title as level_title, m.title as module_title
-      FROM assessments a
-      LEFT JOIN levels lvl ON a.level_id = lvl.id
-      LEFT JOIN modules m ON a.module_id = m.id
-      WHERE a.status = 'active'
-    `;
-    const params: any[] = [];
+    const [allAssessments, allLevels, allModules] = await Promise.all([
+      listAssessments(),
+      listLevels(),
+      listModules(),
+    ]);
 
-    if (lessonId) {
-      queryText += ` AND a.lesson_id = $${params.length + 1}`;
-      params.push(parseInt(lessonId));
-    }
-    if (moduleId) {
-      queryText += ` AND a.module_id = $${params.length + 1}`;
-      params.push(parseInt(moduleId));
-    }
-    if (levelId) {
-      queryText += ` AND a.level_id = $${params.length + 1}`;
-      params.push(parseInt(levelId));
-    }
-    if (type) {
-      queryText += ` AND a.assessment_type = $${params.length + 1}`;
-      params.push(type);
-    }
+    const levelMap = new Map(allLevels.map((l) => [l.id, l]));
+    const moduleMap = new Map(allModules.map((m) => [m.id, m]));
 
-    queryText += ' ORDER BY a.created_at DESC LIMIT 50';
+    let filtered = allAssessments.filter((a) => a.status === 'active');
 
-    const assessments = await query(queryText, params);
+    if (lessonId) filtered = filtered.filter((a) => a.lessonId === parseInt(lessonId, 10));
+    if (moduleId) filtered = filtered.filter((a) => a.moduleId === parseInt(moduleId, 10));
+    if (levelId) filtered = filtered.filter((a) => a.levelId === parseInt(levelId, 10));
+    if (type) filtered = filtered.filter((a) => a.assessmentType === type);
+
+    const assessments = filtered.map((a) => ({
+      id: a.id,
+      title: a.title,
+      assessment_type: a.assessmentType,
+      passing_score: a.passingScore,
+      level_id: a.levelId || null,
+      module_id: a.moduleId || null,
+      lesson_id: a.lessonId || null,
+      level_title: a.levelId ? levelMap.get(a.levelId)?.title || null : null,
+      module_title: a.moduleId ? moduleMap.get(a.moduleId)?.title || null : null,
+    }));
 
     return NextResponse.json({ assessments });
   } catch (error) {
@@ -70,13 +68,12 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: 'Titre et type requis' }, { status: 400 });
     }
 
-    // Créer l'évaluation avec questions sélectionnées de manière cumulative
     const result = await createAssessmentWithQuestions({
       title,
       assessmentType,
-      levelId: levelId ? parseInt(levelId) : undefined,
-      moduleId: moduleId ? parseInt(moduleId) : undefined,
-      lessonId: lessonId ? parseInt(lessonId) : undefined,
+      levelId: levelId ? parseInt(levelId, 10) : undefined,
+      moduleId: moduleId ? parseInt(moduleId, 10) : undefined,
+      lessonId: lessonId ? parseInt(lessonId, 10) : undefined,
       userId,
       totalQuestions: questionCount || 10,
       passingScore: passingScore || 75,

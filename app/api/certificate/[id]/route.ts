@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server';
-import { query, queryOne } from '@/services/database/client';
+import { getCertificateByCode, getUserById } from '@/services/database/firestore-repository';
 import { getRequestUserId } from '@/services/auth/api';
 
 // GET /api/certificate/[id]
@@ -13,27 +13,20 @@ export async function GET(
       return NextResponse.json({ error: 'Non authentifié' }, { status: 401 });
     }
 
-    const certificateId = params.id;
+    const certificateCode = params.id;
+    const certificate = await getCertificateByCode(certificateCode);
 
-    const certificate = await queryOne(
-      `SELECT c.*, u.first_name, u.last_name, u.email
-       FROM certificates c
-       JOIN users u ON c.user_id = u.id
-       WHERE c.certificate_code = $1 AND c.status = 'issued'`,
-      [certificateId]
-    );
-
-    if (!certificate) {
+    if (!certificate || certificate.status !== 'issued') {
       return NextResponse.json({ error: 'Certificat introuvable' }, { status: 404 });
     }
 
+    const certUser = await getUserById(certificate.userId);
+
     return NextResponse.json({
-      certificateCode: certificate.certificate_code,
-      userName: certificate.first_name && certificate.last_name
-        ? `${certificate.first_name} ${certificate.last_name}`
-        : certificate.email,
-      finalScore: certificate.final_score,
-      completedAt: certificate.issued_at,
+      certificateCode: certificate.certificateCode,
+      userName: certificate.userName || (certUser?.firstName && certUser?.lastName ? `${certUser.firstName} ${certUser.lastName}` : certUser?.email || 'Apprenant'),
+      finalScore: certificate.finalScore,
+      completedAt: certificate.completedAt,
       status: certificate.status,
     });
   } catch (error) {

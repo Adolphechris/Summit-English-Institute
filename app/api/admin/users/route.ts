@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import { getRequestAdminUser } from '@/services/auth/api';
-import { query, queryOne, execute } from '@/services/database/client';
+import { listUsers, getUserById, updateUser } from '@/services/database/firestore-repository';
+import type { UserRole, UserStatus } from '@/services/database/firestore-schema';
 
 export async function GET(request: Request) {
   const admin = await getRequestAdminUser(request);
@@ -9,12 +10,17 @@ export async function GET(request: Request) {
   }
 
   try {
-    const users = await query(`
-      SELECT id, email, role, status, first_name as "firstName", last_name as "lastName",
-             created_at as "createdAt", last_login_at as "lastLoginAt"
-      FROM users
-      ORDER BY id DESC
-    `);
+    const rawUsers = await listUsers();
+    const users = rawUsers.map((u) => ({
+      id: u.id,
+      email: u.email,
+      role: u.role,
+      status: u.status,
+      firstName: u.firstName || null,
+      lastName: u.lastName || null,
+      createdAt: u.createdAt,
+      lastLoginAt: u.lastLoginAt || null,
+    }));
 
     return NextResponse.json({ users });
   } catch (error) {
@@ -37,20 +43,28 @@ export async function PUT(request: Request) {
       return NextResponse.json({ error: 'User ID is required' }, { status: 400 });
     }
 
-    const updatedUser = await queryOne(`
-      UPDATE users
-      SET role = COALESCE($2, role),
-          status = COALESCE($3, status),
-          updated_at = NOW()
-      WHERE id = $1
-      RETURNING id, email, role, status, first_name as "firstName", last_name as "lastName"
-    `, [userId, role || null, status || null]);
-
-    if (!updatedUser) {
+    const existing = await getUserById(Number(userId));
+    if (!existing) {
       return NextResponse.json({ error: 'User not found' }, { status: 404 });
     }
 
-    return NextResponse.json({ user: updatedUser });
+    const updates: Partial<{ role: UserRole; status: UserStatus }> = {};
+    if (role) updates.role = role as UserRole;
+    if (status) updates.status = status as UserStatus;
+
+    await updateUser(Number(userId), updates);
+    const updated = await getUserById(Number(userId));
+
+    return NextResponse.json({
+      user: {
+        id: updated?.id,
+        email: updated?.email,
+        role: updated?.role,
+        status: updated?.status,
+        firstName: updated?.firstName || null,
+        lastName: updated?.lastName || null,
+      },
+    });
   } catch (error) {
     console.error('Error updating user:', error);
     return NextResponse.json({ error: 'Internal Server Error' }, { status: 500 });

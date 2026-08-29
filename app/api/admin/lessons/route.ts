@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server';
 import { getRequestAdminUser } from '@/services/auth/api';
-import { query, queryOne, execute } from '@/services/database/client';
+import { listLessons, listModules, listLevels, createLesson } from '@/services/database/firestore-repository';
 
 export async function GET(request: Request) {
   const admin = await getRequestAdminUser(request);
@@ -9,14 +9,30 @@ export async function GET(request: Request) {
   }
 
   try {
-    const lessons = await query(`
-      SELECT l.id, l.module_id, l.title, l.objective, l.order_index, l.status,
-             m.title as module_title, lev.id as level_id, lev.title as level_title
-      FROM lessons l
-      JOIN modules m ON l.module_id = m.id
-      JOIN levels lev ON m.level_id = lev.id
-      ORDER BY lev.id ASC, m.order_index ASC, l.order_index ASC
-    `);
+    const [allLessons, allModules, allLevels] = await Promise.all([
+      listLessons(),
+      listModules(),
+      listLevels(),
+    ]);
+
+    const moduleMap = new Map(allModules.map((m) => [m.id, m]));
+    const levelMap = new Map(allLevels.map((l) => [l.id, l]));
+
+    const lessons = allLessons.map((l) => {
+      const parentMod = moduleMap.get(l.moduleId);
+      const parentLevel = parentMod ? levelMap.get(parentMod.levelId) : undefined;
+      return {
+        id: l.id,
+        module_id: l.moduleId,
+        title: l.title,
+        objective: l.objective,
+        order_index: l.orderIndex,
+        status: l.status,
+        module_title: parentMod?.title || 'Module',
+        level_id: parentLevel?.id || 1,
+        level_title: parentLevel?.title || 'Level',
+      };
+    });
 
     return NextResponse.json({ lessons });
   } catch (error) {
@@ -33,32 +49,28 @@ export async function POST(request: Request) {
 
   try {
     const body = await request.json();
-    const { moduleId, title, objective, explanation, examples, vocabulary, expressions, itContext, practice, summary, orderIndex, status } = body;
+    const { moduleId, levelId, title, objective, explanation, examples, vocabulary, expressions, itContext, practice, summary, orderIndex, status } = body;
 
     if (!moduleId || !title || !explanation) {
       return NextResponse.json({ error: 'Missing required fields' }, { status: 400 });
     }
 
-    const lesson = await queryOne(`
-      INSERT INTO lessons (
-        module_id, title, objective, explanation, examples, vocabulary,
-        expressions, it_context, practice, summary, order_index, status
-      ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12)
-      RETURNING *
-    `, [
-      moduleId,
+    const lesson = await createLesson({
+      moduleId: Number(moduleId),
+      levelId: Number(levelId || 1),
       title,
-      objective || '',
+      objective: objective || '',
       explanation,
-      JSON.stringify(examples || []),
-      JSON.stringify(vocabulary || []),
-      JSON.stringify(expressions || []),
-      itContext || '',
-      JSON.stringify(practice || []),
-      summary || '',
-      orderIndex || 1,
-      status || 'active'
-    ]);
+      examples: examples || [],
+      vocabulary: vocabulary || [],
+      expressions: expressions || [],
+      itContext: itContext || '',
+      practice: practice || [],
+      summary: summary || '',
+      orderIndex: orderIndex || 1,
+      status: status || 'active',
+      version: 1,
+    });
 
     return NextResponse.json({ lesson }, { status: 201 });
   } catch (error) {

@@ -1,47 +1,40 @@
 // ============================================================================
-// Services d'authentification
+// Services d'authentification — Écosystème Google (Cloud Firestore)
+// Summit English Institute — JWT httpOnly + Session Firestore + bcrypt
 // ============================================================================
 
 import { hash, compare } from 'bcryptjs';
 import { sign, verify, type SignOptions } from 'jsonwebtoken';
-import { query, execute, queryOne } from '@/services/database/client';
+import {
+  getUserByEmail,
+  getUserById,
+  createUser as createFirestoreUser,
+  updateUser,
+  createSession as saveSessionToDb,
+  getSession,
+  deleteSession as removeSessionFromDb,
+} from '@/services/database/firestore-repository';
+import type { UserDoc } from '@/services/database/firestore-schema';
 import { config } from '@/lib/config';
 import type { User, UserRole } from '@/types';
 
 const SALT_ROUNDS = 10;
 
-// Colonnes SQL de la table users (snake_case)
-type UserDbRow = {
-  id: number;
-  email: string;
-  role: string;
-  status: string;
-  first_name: string | null;
-  last_name: string | null;
-  preferred_language: string | null;
-  created_at: Date;
-  updated_at: Date;
-  last_login_at: Date | null;
-  password_hash?: string;
-};
-
-// Mapper une ligne SQL (snake_case) vers le type métier User (camelCase)
-function mapUserRow(row: UserDbRow): User {
+// Mapper un document Firestore vers le type métier User (camelCase)
+export function mapUserDoc(doc: UserDoc): User {
   return {
-    id: row.id,
-    email: row.email,
-    role: row.role as UserRole,
-    status: row.status as User['status'],
-    firstName: row.first_name || undefined,
-    lastName: row.last_name || undefined,
-    preferredLanguage: row.preferred_language || 'fr',
-    createdAt: row.created_at,
-    updatedAt: row.updated_at,
-    lastLoginAt: row.last_login_at || undefined,
+    id: doc.id,
+    email: doc.email,
+    role: doc.role as UserRole,
+    status: doc.status as User['status'],
+    firstName: doc.firstName || undefined,
+    lastName: doc.lastName || undefined,
+    preferredLanguage: doc.preferredLanguage || 'fr',
+    createdAt: new Date(doc.createdAt),
+    updatedAt: new Date(doc.updatedAt),
+    lastLoginAt: doc.lastLoginAt ? new Date(doc.lastLoginAt) : undefined,
   };
 }
-
-const USER_SELECT_COLUMNS = `id, email, role, status, first_name, last_name, preferred_language, created_at, updated_at, last_login_at`;
 
 // Créer un utilisateur
 export async function createUser(data: {
@@ -51,47 +44,44 @@ export async function createUser(data: {
   lastName?: string;
   role?: UserRole;
 }): Promise<User> {
-  const hashedPassword = await hash(data.password, SALT_ROUNDS);
-
-  const result = await queryOne<UserDbRow>(
-    `INSERT INTO users (email, password_hash, first_name, last_name, role)
-     VALUES ($1, $2, $3, $4, $5)
-     RETURNING ${USER_SELECT_COLUMNS}`,
-    [data.email.toLowerCase(), hashedPassword, data.firstName || null, data.lastName || null, data.role || 'student']
-  );
-
-  if (!result) {
-    throw new Error('Failed to create user');
+  const existing = await getUserByEmail(data.email);
+  if (existing) {
+    throw new Error('User already exists');
   }
 
-  return mapUserRow(result);
+  const hashedPassword = await hash(data.password, SALT_ROUNDS);
+
+  const created = await createFirestoreUser({
+    email: data.email.toLowerCase().trim(),
+    passwordHash: hashedPassword,
+    firstName: data.firstName || null,
+    lastName: data.lastName || null,
+    role: data.role || 'student',
+    status: 'active',
+    createdAt: new Date().toISOString(),
+    updatedAt: new Date().toISOString(),
+  });
+
+  return mapUserDoc(created);
 }
 
 // Authentifier un utilisateur
 export async function authenticateUser(email: string, password: string): Promise<User | null> {
-  const user = await queryOne<UserDbRow & { password_hash: string }>(
-    `SELECT ${USER_SELECT_COLUMNS}, password_hash
-     FROM users
-     WHERE email = $1 AND status = 'active'`,
-    [email.toLowerCase()]
-  );
+  const user = await getUserByEmail(email);
 
-  if (!user) {
+  if (!user || user.status !== 'active') {
     return null;
   }
 
-  const isValid = await compare(password, user.password_hash);
+  const isValid = await compare(password, user.passwordHash);
   if (!isValid) {
     return null;
   }
 
-  // Mettre à jour last_login_at
-  await execute(
-    `UPDATE users SET last_login_at = NOW() WHERE id = $1`,
-    [user.id]
-  );
+  const now = new Date().toISOString();
+  await updateUser(user.id, { lastLoginAt: now });
 
-  return mapUserRow(user);
+  return mapUserDoc({ ...user, lastLoginAt: now });
 }
 
 // Créer une session
@@ -100,27 +90,25 @@ export async function createSession(userId: number): Promise<string> {
     expiresIn: config.auth.expiry as SignOptions['expiresIn'],
   });
 
-  await execute(
-    `INSERT INTO sessions (user_id, token, expires_at)
-     VALUES ($1, $2, NOW() + INTERVAL '7 days')`,
-    [userId, token]
-  );
+  const expiresAt = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000);
+  await saveSessionToDb(token, userId, expiresAt);
 
   return token;
 }
 
-// Vérifier un token (signature + session encore active en base)
-// → un token est RÉVOQUÉ dès que sa ligne `sessions` est supprimée (logout).
+// Vérifier un token (signature + session encore active dans Firestore)
 export async function verifyToken(token: string): Promise<{ userId: number } | null> {
   try {
     const decoded = verify(token, config.auth.secret) as { userId: number };
 
-    // Révocation : la session doit exister et ne pas être expirée.
-    const session = await queryOne<{ user_id: number }>(
-      `SELECT user_id FROM sessions WHERE token = $1 AND expires_at > NOW()`,
-      [token]
-    );
+    // Révocation : la session doit exister dans Firestore et ne pas être expirée.
+    const session = await getSession(token);
     if (!session) return null;
+
+    if (new Date(session.expiresAt).getTime() < Date.now()) {
+      await removeSessionFromDb(token);
+      return null;
+    }
 
     return decoded;
   } catch {
@@ -164,32 +152,27 @@ export async function getRequestUserId(request: Request): Promise<number | null>
 
 // Trouver un utilisateur par token
 export async function findUserByToken(token: string): Promise<User | null> {
-  const result = await queryOne<UserDbRow>(
-    `SELECT u.${USER_SELECT_COLUMNS}
-     FROM users u
-     JOIN sessions s ON u.id = s.user_id
-     WHERE s.token = $1 AND s.expires_at > NOW() AND u.status = 'active'`,
-    [token]
-  );
+  const session = await getSession(token);
+  if (!session || new Date(session.expiresAt).getTime() < Date.now()) {
+    return null;
+  }
 
-  return result ? mapUserRow(result) : null;
+  const user = await getUserById(session.userId);
+  if (!user || user.status !== 'active') return null;
+
+  return mapUserDoc(user);
 }
 
 // Trouver un utilisateur par identifiant (utilisé par GET /api/auth/me)
 export async function findUserById(userId: number): Promise<User | null> {
-  const result = await queryOne<UserDbRow>(
-    `SELECT ${USER_SELECT_COLUMNS}
-     FROM users
-     WHERE id = $1 AND status = 'active'`,
-    [userId]
-  );
-
-  return result ? mapUserRow(result) : null;
+  const user = await getUserById(userId);
+  if (!user || user.status !== 'active') return null;
+  return mapUserDoc(user);
 }
 
 // Déconnexion
 export async function deleteSession(token: string): Promise<void> {
-  await execute(`DELETE FROM sessions WHERE token = $1`, [token]);
+  await removeSessionFromDb(token);
 }
 
 // Vérifier si la requête provient d'un administrateur

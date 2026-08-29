@@ -2,12 +2,18 @@
  * Tests de sécurité des routes API : authentification obligatoire,
  * codes HTTP cohérents, rate-limiting du login/register.
  */
-jest.mock('@/services/database/client', () => ({
-  query: jest.fn(),
-  execute: jest.fn(),
-  queryOne: jest.fn(),
-  withTransaction: jest.fn(),
-  pool: { query: jest.fn() },
+jest.mock('@/services/database/firestore-repository', () => ({
+  getUserByEmail: jest.fn(),
+  getUserById: jest.fn(),
+  getUserProgress: jest.fn(),
+  getUserSkillProgress: jest.fn(),
+  getUserAttempts: jest.fn(),
+  getUserReviewItems: jest.fn(),
+  listSkills: jest.fn(async () => []),
+  listLessons: jest.fn(async () => []),
+  listModules: jest.fn(async () => []),
+  listQuestions: jest.fn(async () => []),
+  getLevelById: jest.fn(),
 }));
 
 jest.mock('@/lib/rateLimit', () => ({

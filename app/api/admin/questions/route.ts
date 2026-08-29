@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server';
 import { getRequestAdminUser } from '@/services/auth/api';
-import { query, queryOne } from '@/services/database/client';
+import { listQuestions, listSkills, createQuestion } from '@/services/database/firestore-repository';
 
 export async function GET(request: Request) {
   const admin = await getRequestAdminUser(request);
@@ -12,14 +12,29 @@ export async function GET(request: Request) {
   const limit = Math.min(parseInt(searchParams.get('limit') || '50', 10), 200);
 
   try {
-    const questions = await query(`
-      SELECT q.id, q.type, q.question_text, q.context, q.difficulty, q.skill_id,
-             q.lesson_id, q.explanation, q.tags, q.status, s.title as skill_title
-      FROM questions q
-      LEFT JOIN skills s ON q.skill_id = s.id
-      ORDER BY q.id DESC
-      LIMIT $1
-    `, [limit]);
+    const [allQuestions, allSkills] = await Promise.all([
+      listQuestions({ limit }),
+      listSkills(),
+    ]);
+
+    const skillMap = new Map(allSkills.map((s) => [s.id, s]));
+
+    const questions = allQuestions.map((q) => {
+      const skill = skillMap.get(q.skillId);
+      return {
+        id: q.id,
+        type: q.type,
+        question_text: q.questionText,
+        context: q.context || null,
+        difficulty: q.difficulty,
+        skill_id: q.skillId,
+        lesson_id: q.lessonId || null,
+        explanation: q.explanation || null,
+        tags: q.tags || [],
+        status: q.isActive ? 'active' : 'archived',
+        skill_title: skill?.name || 'Général',
+      };
+    });
 
     return NextResponse.json({ questions });
   } catch (error) {
@@ -36,28 +51,26 @@ export async function POST(request: Request) {
 
   try {
     const body = await request.json();
-    const { type, questionText, context, difficulty, skillId, lessonId, explanation, tags, status } = body;
+    const { type, questionText, context, difficulty, skillId, lessonId, explanation, options, correctAnswer, tags, status } = body;
 
     if (!type || !questionText) {
       return NextResponse.json({ error: 'Missing required fields' }, { status: 400 });
     }
 
-    const question = await queryOne(`
-      INSERT INTO questions (
-        type, question_text, context, difficulty, skill_id, lesson_id, explanation, tags, status
-      ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
-      RETURNING *
-    `, [
+    const question = await createQuestion({
       type,
       questionText,
-      context || null,
-      difficulty || 'A',
-      skillId || null,
-      lessonId || null,
-      explanation || null,
-      tags || [],
-      status || 'active'
-    ]);
+      context: context || null,
+      difficulty: difficulty || 'A',
+      skillId: Number(skillId || 1),
+      lessonId: lessonId ? Number(lessonId) : null,
+      explanation: explanation || null,
+      options: options || [],
+      correctAnswer: correctAnswer || '',
+      tags: tags || [],
+      isActive: status !== 'archived',
+      version: 1,
+    });
 
     return NextResponse.json({ question }, { status: 201 });
   } catch (error) {

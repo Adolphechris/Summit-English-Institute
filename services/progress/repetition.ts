@@ -1,8 +1,15 @@
 // ============================================================================
-// Service de répétition espacée
+// Service de répétition espacée — Écosystème Google (Cloud Firestore)
+// Summit English Institute — Algorithme de révision espacée
 // ============================================================================
 
-import { query, execute, queryOne } from '@/services/database/client';
+import {
+  getUserReviewItems,
+  upsertReviewItem,
+  listSkills,
+  getSkillById,
+  markReviewItemMastered,
+} from '@/services/database/firestore-repository';
 import { APP_CONFIG } from '@/lib/constants';
 
 /**
@@ -11,7 +18,7 @@ import { APP_CONFIG } from '@/lib/constants';
 export function calculateNextReview(
   lastResult: number,
   currentInterval: number,
-  errorCount: number
+  _errorCount: number
 ): Date {
   const now = new Date();
   const intervals = APP_CONFIG.reviewIntervals;
@@ -42,35 +49,37 @@ export function calculateNextReview(
  * Mettre à jour les éléments de révision pour un utilisateur
  */
 export async function updateReviewItems(userId: number, skillId: number, result: number): Promise<void> {
-  // Vérifier s'il existe déjà un élément de révision pour cette compétence
-  const existing = await queryOne(
-    `SELECT * FROM review_items WHERE user_id = $1 AND skill_id = $2 AND status IN ('due', 'in_review')`,
-    [userId, skillId]
-  );
+  const items = await getUserReviewItems(userId);
+  const existing = items.find((i) => i.skillId === skillId && (i.status === 'due' || i.status === 'in_review'));
+
+  const now = new Date().toISOString();
 
   if (existing) {
-    // Mettre à jour l'élément existant
-    const nextReview = calculateNextReview(result, 1, existing.error_count);
+    const nextReview = calculateNextReview(result, 1, existing.errorCount);
     const priority = result < 60 ? 'high' : result < 75 ? 'normal' : 'low';
+    const newErrorCount = result < 75 ? existing.errorCount + 1 : existing.errorCount;
 
-    await execute(
-      `UPDATE review_items
-       SET last_result = $1,
-           error_count = error_count + CASE WHEN $1 < 75 THEN 1 ELSE 0 END,
-           priority = $2,
-           scheduled_for = $3,
-           updated_at = NOW()
-       WHERE id = $4`,
-      [result, priority, nextReview.toISOString(), existing.id]
-    );
+    await upsertReviewItem(userId, skillId, {
+      lastResult: result,
+      errorCount: newErrorCount,
+      priority,
+      scheduledFor: nextReview.toISOString(),
+      lastErrorAt: now,
+      updatedAt: now,
+    });
   } else if (result < 75) {
-    // Créer un nouvel élément de révision si la compétence est faible
     const nextReview = calculateNextReview(result, 1, 0);
-    await execute(
-      `INSERT INTO review_items (user_id, skill_id, error_count, last_result, priority, status, scheduled_for)
-       VALUES ($1, $2, 1, $3, $4, 'due', $5)`,
-      [userId, skillId, result, result < 60 ? 'high' : 'normal', nextReview.toISOString()]
-    );
+    const priority = result < 60 ? 'high' : 'normal';
+
+    await upsertReviewItem(userId, skillId, {
+      errorCount: 1,
+      lastResult: result,
+      priority,
+      status: 'due',
+      scheduledFor: nextReview.toISOString(),
+      lastErrorAt: now,
+      updatedAt: now,
+    });
   }
 }
 
@@ -78,53 +87,72 @@ export async function updateReviewItems(userId: number, skillId: number, result:
  * Récupérer les révisions dues pour un utilisateur
  */
 export async function getDueReviews(userId: number) {
-  return query(
-    `SELECT ri.id, ri.skill_id, s.name as skill_name, ri.error_type, ri.error_count, ri.last_result, ri.priority, ri.status
-     FROM review_items ri
-     JOIN skills s ON ri.skill_id = s.id
-     WHERE ri.user_id = $1
-       AND ri.status IN ('due', 'in_review')
-       AND (ri.scheduled_for IS NULL OR ri.scheduled_for <= NOW())
-     ORDER BY
-       CASE ri.priority
-         WHEN 'critical' THEN 1
-         WHEN 'high' THEN 2
-         WHEN 'normal' THEN 3
-         WHEN 'low' THEN 4
-       END,
-       ri.created_at DESC`,
-    [userId]
+  const items = await getUserReviewItems(userId);
+  const now = Date.now();
+
+  const dueItems = items.filter((i) => {
+    if (i.status !== 'due' && i.status !== 'in_review') return false;
+    if (!i.scheduledFor) return true;
+    return new Date(i.scheduledFor).getTime() <= now;
+  });
+
+  const priorityWeight: Record<string, number> = {
+    critical: 1,
+    high: 2,
+    normal: 3,
+    low: 4,
+  };
+
+  dueItems.sort((a, b) => {
+    const pA = priorityWeight[a.priority] || 3;
+    const pB = priorityWeight[b.priority] || 3;
+    if (pA !== pB) return pA - pB;
+    return new Date(b.lastErrorAt || 0).getTime() - new Date(a.lastErrorAt || 0).getTime();
+  });
+
+  // Enrichir avec le nom de la compétence
+  const enriched = await Promise.all(
+    dueItems.map(async (item) => {
+      const skill = await getSkillById(item.skillId);
+      return {
+        id: `${item.userId}_${item.skillId}`,
+        skill_id: item.skillId,
+        skill_name: skill?.name || `Compétence ${item.skillId}`,
+        error_type: item.errorType || null,
+        error_count: item.errorCount,
+        last_result: item.lastResult ?? null,
+        priority: item.priority,
+        status: item.status,
+      };
+    })
   );
+
+  return enriched;
 }
 
 /**
  * Marquer un élément de révision comme maîtrisé
  */
-export async function markReviewAsMastered(userId: number, reviewItemId: number): Promise<void> {
-  await execute(
-    `UPDATE review_items
-     SET status = 'mastered',
-         completed_at = NOW(),
-         updated_at = NOW()
-     WHERE id = $1 AND user_id = $2`,
-    [reviewItemId, userId]
-  );
+export async function markReviewAsMastered(userId: number, skillId: number): Promise<void> {
+  await markReviewItemMastered(userId, skillId);
 }
 
 /**
  * Initialiser les révisions pour un nouvel utilisateur
  */
 export async function initializeReviewsForUser(userId: number): Promise<void> {
-  // Récupérer toutes les compétences critiques
-  const criticalSkills = await query(
-    `SELECT id FROM skills WHERE is_critical = true AND status = 'active'`
-  );
+  const allSkills = await listSkills();
+  const criticalSkills = allSkills.filter((s) => s.isCritical && s.status === 'active');
+
+  const tomorrow = new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString();
 
   for (const skill of criticalSkills) {
-    await execute(
-      `INSERT INTO review_items (user_id, skill_id, error_count, last_result, priority, status, scheduled_for)
-       VALUES ($1, $2, 0, NULL, 'normal', 'due', NOW() + INTERVAL '1 day')`,
-      [userId, skill.id]
-    );
+    await upsertReviewItem(userId, skill.id, {
+      errorCount: 0,
+      lastResult: undefined,
+      priority: 'normal',
+      status: 'due',
+      scheduledFor: tomorrow,
+    });
   }
 }

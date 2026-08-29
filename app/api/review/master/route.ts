@@ -11,13 +11,19 @@ export async function POST(request: Request) {
     }
 
     const body = await request.json();
-    const reviewItemId = parseInt(body.reviewItemId, 10);
+    const rawId = body.reviewItemId || body.skillId;
 
-    if (!reviewItemId || isNaN(reviewItemId)) {
+    let skillId = parseInt(String(rawId), 10);
+    if (isNaN(skillId) && typeof rawId === 'string' && rawId.includes('_')) {
+      const parts = rawId.split('_');
+      skillId = parseInt(parts[1], 10);
+    }
+
+    if (!skillId || isNaN(skillId)) {
       return NextResponse.json({ error: 'Identifiant invalide' }, { status: 400 });
     }
 
-    await markReviewAsMastered(userId, reviewItemId);
+    await markReviewAsMastered(userId, skillId);
 
     return NextResponse.json({ success: true });
   } catch (error) {

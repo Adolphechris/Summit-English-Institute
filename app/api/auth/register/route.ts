@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server';
 import { createUser, createSession } from '@/services/auth/api';
-import { queryOne } from '@/services/database/client';
+import { getUserByEmail } from '@/services/database/firestore-repository';
 import { isValidEmail, isValidPassword, normalizeEmail, sanitizeName } from '@/lib/validate';
 import { isRateLimitedAsync, clearRateLimitAsync } from '@/lib/rateLimit';
 
@@ -38,12 +38,8 @@ export async function POST(request: Request) {
       );
     }
 
-    // Vérifier si l'utilisateur existe déjà (email unique)
-    const existing = await queryOne<{ id: number }>(
-      'SELECT id FROM users WHERE email = $1',
-      [normalizedEmail]
-    );
-
+    // Vérifier si l'utilisateur existe déjà (email unique dans Firestore)
+    const existing = await getUserByEmail(normalizedEmail);
     if (existing) {
       return NextResponse.json({ error: 'Cet email est déjà utilisé' }, { status: 409 });
     }

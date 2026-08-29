@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server';
-import { query } from '@/services/database/client';
+import { listLessons, listModules, listLevels } from '@/services/database/firestore-repository';
 import { getRequestUserId } from '@/services/auth/api';
 
 // GET /api/lessons
@@ -13,31 +13,37 @@ export async function GET(request: Request) {
     const url = new URL(request.url);
     const moduleId = url.searchParams.get('moduleId');
     const levelId = url.searchParams.get('levelId');
-    const limitRaw = parseInt(url.searchParams.get('limit') || '50', 10);
-    const limit = isNaN(limitRaw) ? 50 : Math.min(Math.max(limitRaw, 1), 200);
 
-    let queryText = `
-      SELECT l.*, m.title as module_title, lvl.title as level_title
-      FROM lessons l
-      JOIN modules m ON l.module_id = m.id
-      JOIN levels lvl ON m.level_id = lvl.id
-      WHERE l.status = 'active'
-    `;
-    const params: any[] = [];
+    const [allLessons, allModules, allLevels] = await Promise.all([
+      listLessons(),
+      listModules(),
+      listLevels(),
+    ]);
+
+    const moduleMap = new Map(allModules.map((m) => [m.id, m]));
+    const levelMap = new Map(allLevels.map((l) => [l.id, l]));
+
+    let filtered = allLessons.filter((l) => l.status === 'active');
 
     if (moduleId) {
-      queryText += ` AND l.module_id = $${params.length + 1}`;
-      params.push(parseInt(moduleId));
+      filtered = filtered.filter((l) => l.moduleId === parseInt(moduleId, 10));
     }
     if (levelId) {
-      queryText += ` AND m.level_id = $${params.length + 1}`;
-      params.push(parseInt(levelId));
+      filtered = filtered.filter((l) => {
+        const mod = moduleMap.get(l.moduleId);
+        return mod?.levelId === parseInt(levelId, 10);
+      });
     }
 
-    queryText += ` ORDER BY l.order_index ASC LIMIT $${params.length + 1}`;
-    params.push(limit);
-
-    const lessons = await query(queryText, params);
+    const lessons = filtered.map((l) => {
+      const parentMod = moduleMap.get(l.moduleId);
+      const parentLevel = parentMod ? levelMap.get(parentMod.levelId) : undefined;
+      return {
+        ...l,
+        module_title: parentMod?.title || 'Module',
+        level_title: parentLevel?.title || 'Level',
+      };
+    });
 
     return NextResponse.json({ lessons });
   } catch (error) {

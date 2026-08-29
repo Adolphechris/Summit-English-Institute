@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server';
-import { query } from '@/services/database/client';
+import { listQuestions, listSkills } from '@/services/database/firestore-repository';
 import { getRequestUserId } from '@/services/auth/api';
 
 // GET /api/practice
@@ -16,27 +16,32 @@ export async function GET(request: Request) {
     const limitRaw = parseInt(url.searchParams.get('limit') || '10', 10);
     const limit = isNaN(limitRaw) ? 10 : Math.min(Math.max(limitRaw, 1), 100);
 
-    let queryText = `
-      SELECT q.*, s.code as skill_code, s.name as skill_name
-      FROM questions q
-      JOIN skills s ON q.skill_id = s.id
-      WHERE q.status = 'active'
-    `;
-    const params: any[] = [];
+    const [allQuestions, allSkills] = await Promise.all([
+      listQuestions(),
+      listSkills(),
+    ]);
+
+    const skillMap = new Map(allSkills.map((s) => [s.id, s]));
+
+    let filtered = allQuestions.filter((q) => q.isActive);
 
     if (skillId) {
-      queryText += ` AND q.skill_id = $${params.length + 1}`;
-      params.push(parseInt(skillId));
+      filtered = filtered.filter((q) => q.skillId === parseInt(skillId, 10));
     }
     if (difficulty) {
-      queryText += ` AND q.difficulty = $${params.length + 1}`;
-      params.push(difficulty);
+      filtered = filtered.filter((q) => q.difficulty === difficulty);
     }
 
-    queryText += ` ORDER BY RANDOM() LIMIT $${params.length + 1}`;
-    params.push(limit);
+    const shuffled = [...filtered].sort(() => 0.5 - Math.random()).slice(0, limit);
 
-    const exercises = await query(queryText, params);
+    const exercises = shuffled.map((q) => {
+      const skill = skillMap.get(q.skillId);
+      return {
+        ...q,
+        skill_code: skill?.code || 'general',
+        skill_name: skill?.name || 'Général',
+      };
+    });
 
     return NextResponse.json({ exercises });
   } catch (error) {

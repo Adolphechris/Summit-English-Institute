@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server';
-import { query, execute, queryOne } from '@/services/database/client';
+import { getQuestionsByIds, listSkills, initOrUpdateProgress } from '@/services/database/firestore-repository';
 import { getRequestUserId } from '@/services/auth/api';
 
 // POST /api/diagnostic/submit
@@ -17,18 +17,14 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: 'Aucune réponse fournie' }, { status: 400 });
     }
 
-    // Récupérer les questions avec leurs compétences et bonnes réponses
-    const questionIds = answers.map((a: any) => a.questionId);
-    const questions = await query(
-      `SELECT q.id, q.skill_id, s.domain, a.answer_text as correct_answer
-       FROM questions q
-       JOIN skills s ON q.skill_id = s.id
-       JOIN answers a ON q.id = a.question_id AND a.is_correct = true
-       WHERE q.id = ANY($1::int[])`,
-      [questionIds]
-    );
+    const questionIds = answers.map((a: any) => Number(a.questionId));
+    const [questions, skills] = await Promise.all([
+      getQuestionsByIds(questionIds),
+      listSkills(),
+    ]);
 
-    const correctMap = new Map(questions.map((q: any) => [q.id, q]));
+    const skillMap = new Map(skills.map((s) => [s.id, s]));
+    const questionsMap = new Map(questions.map((q) => [q.id, q]));
 
     // Calculer le score par domaine
     const domainScores: Record<string, { correct: number; total: number }> = {};
@@ -36,10 +32,12 @@ export async function POST(request: Request) {
     let totalQuestions = 0;
 
     for (const answer of answers) {
-      const question = correctMap.get(answer.questionId);
-      if (!question) continue;
+      const q = questionsMap.get(Number(answer.questionId));
+      if (!q) continue;
 
-      const domain = question.domain;
+      const skill = skillMap.get(q.skillId);
+      const domain = skill?.domain || 'grammar';
+
       if (!domainScores[domain]) {
         domainScores[domain] = { correct: 0, total: 0 };
       }
@@ -47,7 +45,11 @@ export async function POST(request: Request) {
       domainScores[domain].total++;
       totalQuestions++;
 
-      if (answer.givenAnswer.trim().toLowerCase() === question.correct_answer.trim().toLowerCase()) {
+      const isCorrect =
+        q.correctAnswer !== undefined &&
+        String(answer.givenAnswer).trim().toLowerCase() === String(q.correctAnswer).trim().toLowerCase();
+
+      if (isCorrect) {
         domainScores[domain].correct++;
         totalCorrect++;
       }
@@ -79,11 +81,7 @@ export async function POST(request: Request) {
     const recommendations = generateRecommendations(domains, overallScore);
 
     // Mettre à jour la progression avec le score réel du diagnostic
-    await execute(
-      `UPDATE progress SET overall_progress = $1, updated_at = NOW()
-       WHERE user_id = $2`,
-      [overallScore, userId]
-    );
+    await initOrUpdateProgress(userId, { overallProgress: overallScore });
 
     return NextResponse.json({
       overallScore,

@@ -1,19 +1,29 @@
 // ============================================================================
 // Service de mise à jour de la progression après une tentative d'évaluation
-// Alimente : skill_progress, level_progress, lesson_progress, progress, review_items
+// Summit English Institute — Écosystème Google (Cloud Firestore)
 // ============================================================================
 
-import { query, execute, queryOne } from '@/services/database/client';
+import {
+  getSkillProgress,
+  upsertSkillProgress,
+  getAssessmentById,
+  getLevelProgress,
+  upsertLevelProgress,
+  upsertLessonProgress,
+  getUserProgress,
+  initOrUpdateProgress,
+  listLevels,
+} from '@/services/database/firestore-repository';
 import { updateReviewItems } from './repetition';
 
-export function masteryStatusFromScore(score: number): string {
+export function masteryStatusFromScore(score: number): 'stable' | 'practicing' | 'learning' | 'new' {
   if (score >= 85) return 'stable';
   if (score >= 75) return 'practicing';
   if (score >= 60) return 'learning';
   return 'new';
 }
 
-export function priorityFromScore(score: number): string {
+export function priorityFromScore(score: number): 'high' | 'normal' | 'low' {
   if (score < 60) return 'high';
   if (score < 75) return 'normal';
   return 'low';
@@ -58,48 +68,34 @@ export async function recordAssessmentResult(params: {
   }
 
   // 2. Mettre à jour skill_progress + alimenter les révisions si faible
+  const now = new Date().toISOString();
+
   for (const [skillId, stats] of skillStats) {
     const skillScore = Math.round((stats.correct / stats.total) * 100);
-
-    const existing = await queryOne<{ attempt_count: number; correct_count: number }>(
-      `SELECT attempt_count, correct_count FROM skill_progress WHERE user_id = $1 AND skill_id = $2`,
-      [userId, skillId]
-    );
+    const existing = await getSkillProgress(userId, skillId);
 
     if (existing) {
-      const newAttemptCount = (existing.attempt_count || 0) + stats.total;
-      const newCorrectCount = (existing.correct_count || 0) + stats.correct;
+      const newAttemptCount = (existing.attemptCount || 0) + stats.total;
+      const newCorrectCount = (existing.correctCount || 0) + stats.correct;
       const newScore = Math.round((newCorrectCount / newAttemptCount) * 100);
 
-      await execute(
-        `UPDATE skill_progress
-         SET mastery_score = $1, mastery_status = $2, attempt_count = $3, correct_count = $4,
-             priority = $5, last_attempt_at = NOW(), updated_at = NOW()
-         WHERE user_id = $6 AND skill_id = $7`,
-        [
-          newScore,
-          masteryStatusFromScore(newScore),
-          newAttemptCount,
-          newCorrectCount,
-          priorityFromScore(newScore),
-          userId,
-          skillId,
-        ]
-      );
+      await upsertSkillProgress(userId, skillId, {
+        masteryScore: newScore,
+        masteryStatus: masteryStatusFromScore(newScore),
+        attemptCount: newAttemptCount,
+        correctCount: newCorrectCount,
+        priority: priorityFromScore(newScore),
+        lastAttemptAt: now,
+      });
     } else {
-      await execute(
-        `INSERT INTO skill_progress (user_id, skill_id, mastery_score, mastery_status, attempt_count, correct_count, last_attempt_at, priority)
-         VALUES ($1, $2, $3, $4, $5, $6, NOW(), $7)`,
-        [
-          userId,
-          skillId,
-          skillScore,
-          masteryStatusFromScore(skillScore),
-          stats.total,
-          stats.correct,
-          priorityFromScore(skillScore),
-        ]
-      );
+      await upsertSkillProgress(userId, skillId, {
+        masteryScore: skillScore,
+        masteryStatus: masteryStatusFromScore(skillScore),
+        attemptCount: stats.total,
+        correctCount: stats.correct,
+        priority: priorityFromScore(skillScore),
+        lastAttemptAt: now,
+      });
     }
 
     // Compétences faibles → révision (règle p. 10 de la Constitution)
@@ -109,65 +105,57 @@ export async function recordAssessmentResult(params: {
   }
 
   // 3. Progression de niveau (validation)
-  const assessment = await queryOne<{ level_id: number | null; lesson_id: number | null }>(
-    `SELECT level_id, lesson_id FROM assessments WHERE id = $1`,
-    [assessmentId]
-  );
+  const assessment = await getAssessmentById(assessmentId);
 
-  if (assessment?.level_id) {
+  if (assessment?.levelId) {
+    const levelId = assessment.levelId;
+    const existingLp = await getLevelProgress(userId, levelId);
+
     if (passed) {
-      await execute(
-        `UPDATE level_progress
-         SET is_started = true, is_completed = true,
-             best_score = GREATEST(COALESCE(best_score, 0), $3),
-             attempt_count = attempt_count + 1,
-             completed_at = COALESCE(completed_at, NOW()),
-             updated_at = NOW()
-         WHERE user_id = $1 AND level_id = $2`,
-        [userId, assessment.level_id, score]
-      );
+      const bestScore = Math.max(existingLp?.bestScore || 0, score);
+      await upsertLevelProgress(userId, levelId, {
+        isStarted: true,
+        isCompleted: true,
+        bestScore,
+        attemptCount: (existingLp?.attemptCount || 0) + 1,
+        completedAt: existingLp?.completedAt || now,
+      });
 
       // Débloquer le niveau suivant
-      await execute(
-        `INSERT INTO level_progress (user_id, level_id, is_started, is_completed)
-         SELECT $1, l.id, true, false
-         FROM levels l
-         WHERE l.course_id = (SELECT course_id FROM levels l2 WHERE l2.id = $2)
-           AND l.order_index = (SELECT order_index + 1 FROM levels l2 WHERE l2.id = $2)
-         ON CONFLICT (user_id, level_id) DO UPDATE SET is_started = true, updated_at = NOW()`,
-        [userId, assessment.level_id]
-      );
+      const allLevels = await listLevels();
+      const currentLevel = allLevels.find((l) => l.id === levelId);
+      if (currentLevel) {
+        const nextLevel = allLevels.find((l) => l.orderIndex === currentLevel.orderIndex + 1);
+        if (nextLevel) {
+          const nextLp = await getLevelProgress(userId, nextLevel.id);
+          await upsertLevelProgress(userId, nextLevel.id, {
+            isStarted: true,
+            isCompleted: nextLp?.isCompleted || false,
+            attemptCount: nextLp?.attemptCount || 0,
+          });
+        }
+      }
     } else {
-      await execute(
-        `UPDATE level_progress
-         SET is_started = true, attempt_count = attempt_count + 1, updated_at = NOW()
-         WHERE user_id = $1 AND level_id = $2`,
-        [userId, assessment.level_id]
-      );
+      await upsertLevelProgress(userId, levelId, {
+        isStarted: true,
+        attemptCount: (existingLp?.attemptCount || 0) + 1,
+      });
     }
 
-    // Niveau courant / jour courant dans progress (le jour avance toujours,
-    // le niveau ne change que lorsque l'évaluation est réussie)
-    await execute(
-      `UPDATE progress SET current_day = LEAST(current_day + 1, 20), updated_at = NOW() WHERE user_id = $1`,
-      [userId]
-    );
+    // Mettre à jour progress général
+    const userProg = await getUserProgress(userId);
+    const currentDay = Math.min((userProg?.currentDay || 1) + 1, 20);
 
-    if (passed) {
-      await execute(
-        `UPDATE progress SET current_level = $2, updated_at = NOW() WHERE user_id = $1`,
-        [userId, assessment.level_id]
-      );
-    }
-  } else if (assessment?.lesson_id && passed) {
-    await execute(
-      `INSERT INTO lesson_progress (user_id, lesson_id, is_started, is_completed, best_score, completed_at)
-       VALUES ($1, $2, true, true, $3, NOW())
-       ON CONFLICT (user_id, lesson_id) DO UPDATE SET
-         is_completed = true,
-         best_score = GREATEST(COALESCE(lesson_progress.best_score, 0), $3),
-         updated_at = NOW()`,
-      [userId, assessment.lesson_id, score]
-    );
+    await initOrUpdateProgress(userId, {
+      currentDay,
+      ...(passed ? { currentLevel: levelId } : {}),
+    });
+  } else if (assessment?.lessonId && passed) {
+    await upsertLessonProgress(userId, assessment.lessonId, {
+      isStarted: true,
+      isCompleted: true,
+      bestScore: score,
+      completedAt: now,
+    });
   }
 }

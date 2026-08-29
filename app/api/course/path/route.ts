@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server';
-import { query, queryOne } from '@/services/database/client';
+import { getUserLevelProgress, getUserProgress } from '@/services/database/firestore-repository';
 import { DAY_TO_LEVEL, getDayTitle } from '@/lib/coursePath';
 import { getRequestUserId } from '@/services/auth/api';
 
@@ -11,30 +11,19 @@ export async function GET(request: Request) {
       return NextResponse.json({ error: 'Non authentifié' }, { status: 401 });
     }
 
-    // Récupérer la progression par niveau
-    const levelProgress = await query(
-      `SELECT level_id, is_started, is_completed, best_score
-       FROM level_progress
-       WHERE user_id = $1
-       ORDER BY level_id`,
-      [userId]
-    );
+    const [levelProgress, progress] = await Promise.all([
+      getUserLevelProgress(userId),
+      getUserProgress(userId),
+    ]);
 
-    // Récupérer la progression globale (niveau et jour courants)
-    const progress = await queryOne<{ current_level: number; current_day: number }>(
-      `SELECT current_level, current_day FROM progress WHERE user_id = $1`,
-      [userId]
-    );
+    const currentLevel = progress?.currentLevel || 1;
+    const currentDay = progress?.currentDay || 1;
 
-    const currentLevel = progress?.current_level || 1;
-    const currentDay = progress?.current_day || 1;
-
-    // Construire le parcours des 20 jours à partir du mapping explicite jours → niveaux
     const days = DAY_TO_LEVEL.map((levelId, index) => {
       const dayNumber = index + 1;
-      const levelProgressData = levelProgress.find((lp) => lp.level_id === levelId);
-      const isStarted = levelProgressData?.is_started || false;
-      const isCompleted = levelProgressData?.is_completed || false;
+      const levelProgressData = levelProgress.find((lp) => lp.levelId === levelId);
+      const isStarted = levelProgressData?.isStarted || false;
+      const isCompleted = levelProgressData?.isCompleted || false;
 
       let status: 'completed' | 'current' | 'available' | 'locked';
       if (levelId < currentLevel || isCompleted) {
@@ -50,7 +39,7 @@ export async function GET(request: Request) {
         title: getDayTitle(dayNumber),
         status,
         levelId,
-        score: levelProgressData?.best_score,
+        score: levelProgressData?.bestScore,
       };
     });
 
@@ -60,4 +49,3 @@ export async function GET(request: Request) {
     return NextResponse.json({ error: 'Erreur serveur' }, { status: 500 });
   }
 }
-

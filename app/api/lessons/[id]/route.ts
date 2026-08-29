@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server';
-import { queryOne } from '@/services/database/client';
+import { getLessonById, getModuleById, getLevelById } from '@/services/database/firestore-repository';
 import { getRequestUserId } from '@/services/auth/api';
 
 // GET /api/lessons/[id]
@@ -13,44 +13,37 @@ export async function GET(
       return NextResponse.json({ error: 'Non authentifié' }, { status: 401 });
     }
 
-    const lessonId = parseInt(params.id);
+    const lessonId = parseInt(params.id, 10);
+    if (isNaN(lessonId)) {
+      return NextResponse.json({ error: 'Identifiant invalide' }, { status: 400 });
+    }
 
-    // Récupérer la leçon avec ses exemples, vocabulaire, expressions, pratique
-    const lesson = await queryOne(
-      `SELECT l.*, m.title as module_title, lvl.title as level_title
-       FROM lessons l
-       JOIN modules m ON l.module_id = m.id
-       JOIN levels lvl ON m.level_id = lvl.id
-       WHERE l.id = $1 AND l.status = 'active'`,
-      [lessonId]
-    );
-
-    if (!lesson) {
+    const lesson = await getLessonById(lessonId);
+    if (!lesson || lesson.status === 'archived') {
       return NextResponse.json({ error: 'Leçon introuvable' }, { status: 404 });
     }
 
-    // Pour l'instant, nous retournons la leçon de base
-    // Les exemples, vocabulaire, expressions et pratique seront chargés séparément
-    // ou inclus dans des champs JSONB
+    const parentModule = await getModuleById(lesson.moduleId);
+    const parentLevel = parentModule ? await getLevelById(parentModule.levelId) : null;
 
     return NextResponse.json({
       lesson: {
         id: lesson.id,
-        moduleId: lesson.module_id,
+        moduleId: lesson.moduleId,
         title: lesson.title,
         objective: lesson.objective,
         explanation: lesson.explanation,
         examples: lesson.examples || [],
         vocabulary: lesson.vocabulary || [],
         expressions: lesson.expressions || [],
-        itContext: lesson.it_context,
+        itContext: lesson.itContext,
         practice: lesson.practice || [],
         summary: lesson.summary,
-        orderIndex: lesson.order_index,
+        orderIndex: lesson.orderIndex,
         status: lesson.status,
         version: lesson.version,
-        moduleTitle: lesson.module_title,
-        levelTitle: lesson.level_title,
+        moduleTitle: parentModule?.title || 'Module',
+        levelTitle: parentLevel?.title || 'Level',
       },
     });
   } catch (error) {

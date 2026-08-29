@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server';
 import { findUserById, getRequestUserId } from '@/services/auth/api';
-import { queryOne, execute } from '@/services/database/client';
+import { getUserById, updateUser } from '@/services/database/firestore-repository';
 import { hash, compare } from 'bcryptjs';
 
 // GET /api/auth/me
@@ -44,6 +44,13 @@ export async function PUT(request: Request) {
     const body = await request.json();
     const { firstName, lastName, currentPassword, newPassword } = body;
 
+    const dbUser = await getUserById(userId);
+    if (!dbUser) {
+      return NextResponse.json({ error: 'Utilisateur introuvable' }, { status: 404 });
+    }
+
+    const updates: Partial<{ firstName: string | null; lastName: string | null; passwordHash: string }> = {};
+
     // Si changement de mot de passe demandé
     if (newPassword) {
       if (!currentPassword) {
@@ -53,28 +60,20 @@ export async function PUT(request: Request) {
         return NextResponse.json({ error: 'Le nouveau mot de passe doit comporter au moins 8 caractères' }, { status: 400 });
       }
 
-      const dbUser = await queryOne<{ password_hash: string }>(
-        'SELECT password_hash FROM users WHERE id = $1',
-        [userId]
-      );
-
-      if (!dbUser || !(await compare(currentPassword, dbUser.password_hash))) {
+      if (!(await compare(currentPassword, dbUser.passwordHash))) {
         return NextResponse.json({ error: 'Mot de passe actuel incorrect' }, { status: 400 });
       }
 
-      const newHash = await hash(newPassword, 10);
-      await execute('UPDATE users SET password_hash = $1 WHERE id = $2', [newHash, userId]);
+      updates.passwordHash = await hash(newPassword, 10);
     }
 
     // Mise à jour des informations de profil
-    await execute(
-      `UPDATE users
-       SET first_name = COALESCE($1, first_name),
-           last_name = COALESCE($2, last_name),
-           updated_at = NOW()
-       WHERE id = $3`,
-      [firstName || null, lastName || null, userId]
-    );
+    if (firstName !== undefined) updates.firstName = firstName || null;
+    if (lastName !== undefined) updates.lastName = lastName || null;
+
+    if (Object.keys(updates).length > 0) {
+      await updateUser(userId, updates);
+    }
 
     const updatedUser = await findUserById(userId);
 
