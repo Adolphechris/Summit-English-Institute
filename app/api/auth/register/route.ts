@@ -81,11 +81,12 @@ export async function POST(request: Request) {
     });
 
     return response;
-  } catch (error) {
+  } catch (error: any) {
     console.error('[REGISTER ERROR]', error);
     return NextResponse.json(
-      { error: "Impossible de créer le compte. L'email existe peut-être déjà." },
+      { error: error?.message || "Impossible de créer le compte." },
       { status: 500 }
     );
   }
 }
+
