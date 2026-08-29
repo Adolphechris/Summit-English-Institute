@@ -82,7 +82,7 @@ export default function FinalAssessmentPage() {
 
           <div className="bg-blue-50 border border-blue-200 rounded-xl p-6 mb-6">
             <h3 className="font-semibold text-blue-900 mb-3">Assessment Details</h3>
-            <div className="grid grid-cols-2 gap-4 text-left">
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 text-left">
               <div>
                 <p className="text-sm text-blue-700">Questions</p>
                 <p className="text-2xl font-bold text-blue-900">50</p>

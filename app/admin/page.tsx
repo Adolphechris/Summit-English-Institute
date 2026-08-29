@@ -40,12 +40,12 @@ export default function AdminDashboardPage() {
 
   return (
     <div className="max-w-7xl mx-auto px-4 py-8">
-      <div className="flex justify-between items-center mb-8">
+      <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-4 mb-8">
         <div>
-          <h1 className="text-3xl font-bold text-slate-900">Administration — Summit English Institute</h1>
+          <h1 className="text-2xl sm:text-3xl font-bold text-slate-900">Administration — Summit English Institute</h1>
           <p className="text-slate-600 mt-1">Gestion du contenu, des apprenants et suivi des performances.</p>
         </div>
-        <Link href="/dashboard">
+        <Link href="/dashboard" className="shrink-0">
           <Button variant="outline">Retour au tableau de bord apprenant</Button>
         </Link>
       </div>

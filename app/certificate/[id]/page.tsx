@@ -74,7 +74,7 @@ export default function CertificatePage() {
           </div>
 
           <div className="py-6 border-t border-b border-slate-200">
-            <div className="grid grid-cols-2 gap-8">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-6 sm:gap-8">
               <div>
                 <p className="text-sm font-medium text-slate-500">Final Score</p>
                 <p className="text-4xl font-bold text-slate-900 mt-1">{certificate.finalScore}%</p>
@@ -90,7 +90,7 @@ export default function CertificatePage() {
             </div>
           </div>
 
-          <div className="grid grid-cols-2 gap-8 text-left">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-6 sm:gap-8 text-left">
             <div>
               <p className="text-sm font-medium text-slate-500">Certificate ID</p>
               <p className="text-sm font-mono text-slate-900 mt-1">{certificate.certificateCode}</p>

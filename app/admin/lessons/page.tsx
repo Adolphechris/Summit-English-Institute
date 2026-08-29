@@ -45,12 +45,12 @@ export default function AdminLessonsPage() {
 
   return (
     <div className="max-w-7xl mx-auto px-4 py-8">
-      <div className="flex justify-between items-center mb-6">
+      <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-4 mb-6">
         <div>
           <h1 className="text-2xl font-bold text-slate-900">Gestion des Leçons ({lessons.length})</h1>
           <p className="text-slate-600 text-sm">Liste complète des leçons des 8 niveaux et 40 modules.</p>
         </div>
-        <div className="flex gap-3">
+        <div className="flex gap-3 shrink-0">
           <Link href="/admin">
             <Button variant="outline">Retour à l&apos;Administration</Button>
           </Link>
