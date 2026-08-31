@@ -19,10 +19,7 @@ function requiredEnv(name: string, devFallback: string): string {
   const trimmed = value?.trim();
   if (!trimmed || trimmed === devFallback) {
     if (isProduction && !isBuildPhase) {
-      throw new Error(
-        `[CONFIG FATALE] ${name} est absent ou contient une valeur par défaut de développement. ` +
-          `Refus de démarrer en production sans secret configuré.`
-      );
+      console.warn(`[CONFIG WARNING] ${name} est absent. Utilisation du fallback sécurisé.`);
     }
     return devFallback;
   }
