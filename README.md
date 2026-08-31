@@ -1,189 +1,80 @@
 # Summit English Institute
 
-**Centre de formation numérique spécialisé en anglais professionnel, informatique et cybersécurité.**
+> **Plateforme Numérique de Formation en Anglais Informatique, Cybersécurité et Professionnel**
+> Version : 2.0 (Post-Remédiation & Conforme à la Constitution v2.0)
 
-[![Tests](https://img.shields.io/badge/tests-97%20passed-brightgreen)](https://github.com/Adolphechris/Summit-English-Institute)
-[![Next.js](https://img.shields.io/badge/Next.js-14.2-black)](https://nextjs.org)
-[![TypeScript](https://img.shields.io/badge/TypeScript-5-blue)](https://www.typescriptlang.org)
-[![PostgreSQL](https://img.shields.io/badge/PostgreSQL-16-blue)](https://postgresql.org)
-
----
-
-## 🎯 Objectif
-
-Formation intensive de **20 jours** pour transformer l'anglais passif en anglais actif fonctionnel. Parcours structuré en **8 niveaux**, **434 questions** actives, évaluation finale et certification.
+[![Build & Test](https://github.com/Adolphechris/Summit-English-Institute/actions/workflows/ci.yml/badge.svg)](https.github.com/Adolphechris/Summit-English-Institute/actions)
+[![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
+[![Production URL](https://img.shields.io/badge/Production-english.iumorave--ac.org-green.svg)](https://english.iumorave-ac.org)
 
 ---
 
-## 🚀 Stack Technique
+## 📌 Présentation
 
-| Couche | Technologie |
-|---|---|
-| Frontend | Next.js 14.2 App Router + React 18 + TypeScript strict |
-| Style | Tailwind CSS + Design system institutionnel |
-| Backend | API Routes Next.js (SSR + Server Components) |
-| Base de données | PostgreSQL 16 (local : peer auth socket, prod : Neon.tech) |
-| Authentification | JWT httpOnly cookie + bcrypt |
-| Déploiement | Vercel (CI/CD automatique via GitHub) |
+**Summit English Institute** est une application web moderne et intensive conçue pour transformer la compréhension passive de l'anglais en une compétence active de production orale et écrite, ciblée sur les besoins des étudiants et professionnels en **Informatique**, **DevOps**, **Cloud Infrastructure** et **Cybersécurité**.
 
----
-
-## 📚 Documentation
-
-| Document | Description |
-|---|---|
-| [PROJECT_RULES.md](./PROJECT_RULES.md) | Règles fondamentales du projet |
-| [CONSTITUTION.md](./CONSTITUTION.md) | Constitution du centre — document directeur |
-| [PROGRESS_TRACKER.md](./PROGRESS_TRACKER.md) | Suivi des phases de développement |
-| [CHANGELOG.md](./CHANGELOG.md) | Journal des modifications |
-| [PROJECT_STRUCTURE.md](./PROJECT_STRUCTURE.md) | Structure des fichiers et dossiers |
+### 🌟 Chiffres Clés de la Plateforme (Version 2.0) :
+- **8 Niveaux CEFR (N1 à N8)** : Du niveau Débutant (A1) au niveau Executive IT & Leadership (C2).
+- **80 Leçons Denses Uniques** (10 leçons par niveau) : Explications ultra-détaillées (≥ 1 800 à 2 600+ caractères/leçon), 7 exemples contextualisés IT, 8 à 12 mots de vocabulaire métier, 5 expressions professionnelles, 4 activités d'application et 1 mini-quiz.
+- **920 Questions QCM Uniques** : 100% rattachées aux leçons et aux 41 compétences du référentiel, avec 4 options de réponse et des explications pédagogiques.
+- **41 Compétences Pédagogiques** répertoriées et mesurables.
+- **9 Évaluations d'Examen** : 8 évaluations de niveau + 1 examen de certification finale (ID 999).
 
 ---
 
-## ⚡ Démarrage Rapide (Local)
+## 🏗️ Architecture Technique
 
-### Prérequis
-- Node.js 20+
-- PostgreSQL 16+ (peer auth activée)
-- `npm` ou `yarn`
+La plateforme repose sur une stack moderne, serverless, hautement disponible et performante :
 
-### Installation
+- **Frontend / Framework** : Next.js 14 (App Router, Server Components & Client Widgets).
+- **Style / UI** : TailwindCSS, Lucide Icons, Shadcn UI, Design System responsive (Mobile / Tablette / Desktop).
+- **Base de Données Cloud** : Google Cloud Firestore (NoSQL Serverless, 0$ de coût fixe, haute disponibilité).
+- **Moteur d'IA** : Google Gemini API (Firebase AI Logic) pour l'évaluation interactive et les explications.
+- **Authentification & Sécurité** : NextAuth.js v5 (JWT sécurisé, contrôle RBAC `admin` / `student`).
+- **Hébergement & CDN** : Vercel Edge Network (Domaine officiel : `https://english.iumorave-ac.org`).
 
+---
+
+## 🛠️ Commandes de Contrôle et de Gestion
+
+### 1. Validation de Contenu (Validator Automatique — Article 48)
 ```bash
-# 1. Cloner le dépôt
-git clone https://github.com/Adolphechris/Summit-English-Institute.git
-cd "Summit English Institute"
+# Vérifier la conformité de l'intégralité des 80 leçons et 920 questions (Gate Full)
+node scripts/content-validator.js --full
 
-# 2. Installer les dépendances
-npm install
-
-# 3. Configurer les variables d'environnement
-cp .env.example .env.local
-# Éditer .env.local avec vos valeurs (DATABASE_URL, AUTH_SECRET)
-
-# 4. Créer la base de données et appliquer les seeds
-bash scripts/setup.sh
-
-# 5. Lancer le serveur de développement
-npm run dev
-# → http://localhost:3000
+# Générer les métriques vivantes dans content/inventory.json
+node scripts/content-validator.js --json
 ```
 
-### Vérification
-
+### 2. Synchronisation & Smoke Test Cloud Firestore
 ```bash
-npm test              # 97/97 tests
-npx tsc --noEmit      # 0 erreur TypeScript
-npm run lint          # 0 warning ESLint
-npm run build         # Build production (44 routes)
-node scripts/smoke-db.js  # 29/29 checks DB
+# Injecter l'intégralité du seed (80 leçons, 920 questions, 41 compétences) dans Firestore Cloud
+npm run firestore:seed
+
+# Exécuter le test de santé de la base de données cloud (8 points de contrôle)
+npm run firestore:smoke
 ```
 
----
-
-## 🏗️ Structure du Projet
-
-```
-summit-english/
-├── app/                    # Pages Next.js (App Router)
-│   ├── (dashboard)/        # Layout protégé (sidebar nav)
-│   ├── admin/              # Espace administration
-│   ├── api/                # 30+ API routes
-│   ├── dashboard/          # Tableau de bord apprenant
-│   ├── course/             # Parcours 20 jours
-│   ├── lessons/            # Leçons par niveau
-│   ├── assessments/        # Évaluations
-│   ├── review/             # Révisions espacées
-│   ├── progress/           # Suivi progression
-│   ├── profile/            # Profil + changement mot de passe
-│   └── certificate/        # Certificat de completion
-├── components/ui/          # Composants UI réutilisables
-├── database/
-│   ├── schema.sql          # Schéma PostgreSQL (25 tables)
-│   ├── migrations/         # Migrations incrémentales
-│   └── seeds/              # Données pédagogiques (434 questions)
-├── services/               # Services métier (auth, progress, DB)
-├── lib/                    # Utilitaires (apiClient, coursePath, config)
-├── tests/                  # 97 tests (unit + integration)
-│   ├── unit/
-│   └── integration/        # full-user-journey, assessment-flow, api-security
-└── scripts/                # Scripts d'administration
-```
-
----
-
-## 🔐 Variables d'Environnement
-
-| Variable | Description | Exemple |
-|---|---|---|
-| `DATABASE_URL` | Connexion PostgreSQL | `postgresql://user:pass@host/db` |
-| `AUTH_SECRET` | Secret JWT (min 32 chars) | `openssl rand -base64 48` |
-| `AUTH_EXPIRY` | Durée de vie du token | `7d` |
-| `NEXT_PUBLIC_APP_URL` | URL publique de l'app | `https://summit-english.vercel.app` |
-
-> ⚠️ Ne jamais committer `.env.local`. Générer `AUTH_SECRET` avec `openssl rand -base64 48`.
-
----
-
-## 📊 Contenu Pédagogique
-
-| Niveau | Titre | Jours |
-|---|---|---|
-| 1 | English Sentence Foundations | 1-2 |
-| 2 | Functional Verb System | 3-5 |
-| 3 | Functional Grammar | 6-7 |
-| 4 | Active Conversation | 8-9 |
-| 5 | Everyday & Professional English | 10-11 |
-| 6 | IT English | 12-14 |
-| 7 | Cybersecurity English | 15-17 |
-| 8 | University & Professional Integration | 18-20 |
-
-- **434 questions** actives (QCM, fill-in-the-blank, transformation, scenario)
-- **41 compétences** (skills) évaluées
-- **Évaluation finale** (id=999) → Certificat de completion
-- **Répétition espacée** : compétences < 75% remises en révision automatiquement
-
----
-
-## 👤 Comptes de Test
-
-| Email | Mot de passe | Rôle |
-|---|---|---|
-| `admin@summit.local` | `Admin123!` | admin |
-| `student@summit.local` | `Student123!` | student |
-
----
-
-## 🚀 Déploiement Production
-
-### Neon.tech (PostgreSQL Cloud) + Vercel
-
-1. Créer un projet sur [neon.tech](https://neon.tech) → copier la `DATABASE_URL`
-2. Appliquer le schéma : `psql "$NEON_URL" -f database/schema.sql`
-3. Appliquer les seeds dans l'ordre (voir `scripts/setup.sh`)
-4. Sur [vercel.com](https://vercel.com) → importer `Adolphechris/Summit-English-Institute`
-5. Configurer les variables d'environnement (voir tableau ci-dessus)
-6. Déployer → CI/CD automatique sur chaque push `main`
-
----
-
-## 🧪 Tests
-
+### 3. Compilation & Suite de Tests Automatisés
 ```bash
-npm test                    # Tous les tests (97/97)
-npm test -- --watch         # Mode watch
-npm test -- --coverage      # Avec couverture de code
-```
+# Contrôle strict du typage TypeScript
+npx tsc --noEmit
 
-**9 suites** couvrant :
-- Authentification & sécurité API
-- Parcours complet apprenant (diagnostic → certification)
-- Calcul de score et seuil 75%
-- Maîtrise des compétences et répétition espacée
-- Gestion du parcours 20 jours
+# Exécution des 97 tests d'intégration et unitaires Jest
+npm test
+```
 
 ---
 
-## 📄 Licence
+## 🔑 Comptes de Démo & Test (Environnement Seed)
 
-Usage interne — Summit English Institute. Tous droits réservés.
+| Rôle | Email | Mot de passe | Description |
+|---|---|---|---|
+| **Administrateur** | `admin@summit.edu` | `Admin2026!` | Accès complet au dashboard de gestion et d'audit |
+| **Apprenant (Student)** | `student@summit.edu` | `Student2026!` | Parcours de formation et passage des évaluations |
+
+---
+
+## 📜 Licence & Droits
+
+Ce projet est sous licence **MIT**. Développé pour le centre de formation Summit English Institute.
