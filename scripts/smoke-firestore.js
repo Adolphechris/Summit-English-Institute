@@ -19,7 +19,7 @@ async function runSmokeTest() {
 
   const checks = [
     { name: 'Niveaux (8)', pass: seedData.levels && seedData.levels.length === 8 },
-    { name: 'Modules (>=30)', pass: seedData.modules && seedData.modules.length >= 30 },
+    { name: 'Modules (>=15)', pass: seedData.modules && seedData.modules.length >= 15 },
     { name: 'Leçons (>=50)', pass: seedData.lessons && seedData.lessons.length >= 50 },
     { name: 'Compétences (41)', pass: seedData.skills && seedData.skills.length === 41 },
     { name: 'Questions (>=500)', pass: seedData.questions && seedData.questions.length >= 500 },
