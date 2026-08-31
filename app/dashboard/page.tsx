@@ -4,19 +4,62 @@ import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { ProgressBar } from '@/components/ui/ProgressBar';
 import { Badge } from '@/components/ui/Badge';
-import { Card } from '@/components/ui/Card';
 import { Button } from '@/components/ui/Button';
 import { Loading } from '@/components/ui/Loading';
 import { apiFetch } from '@/lib/apiClient';
-import type { DashboardData, DomainProgress, ContinueLearningCard, RecentResult } from '@/types';
+import type { DashboardData, DomainProgress, RecentResult } from '@/types';
 
+/* ─── mini-composants inline ─────────────────────────────── */
+function StatCard({ value, label, icon, color }: { value: string | number; label: string; icon: string; color: string }) {
+  return (
+    <div className={`rounded-2xl p-5 text-white ${color} shadow-sm`}>
+      <div className="text-3xl mb-1">{icon}</div>
+      <div className="text-3xl font-black leading-none">{value}</div>
+      <div className="text-sm opacity-80 mt-1 font-medium">{label}</div>
+    </div>
+  );
+}
+
+function QuickCard({ href, icon, title, desc, badge }: { href: string; icon: string; title: string; desc: string; badge?: string }) {
+  return (
+    <Link href={href} className="group block bg-white rounded-2xl p-5 border border-slate-100 hover:border-blue-200 hover:shadow-md transition-all duration-200">
+      <div className="flex items-start justify-between mb-3">
+        <span className="text-3xl">{icon}</span>
+        {badge && <Badge variant="warning" size="sm">{badge}</Badge>}
+      </div>
+      <h3 className="font-semibold text-slate-900 group-hover:text-blue-700 transition-colors">{title}</h3>
+      <p className="text-sm text-slate-500 mt-1">{desc}</p>
+    </Link>
+  );
+}
+
+const PROGRAM_LEVELS = [
+  { level: 1, cefr: 'A1', title: 'Absolute Beginner', color: 'bg-slate-100 text-slate-600', lessons: '1-10', desc: 'Fondamentaux IT, vocabulaire de base, présentations professionnelles' },
+  { level: 2, cefr: 'A2', title: 'Elementary', color: 'bg-blue-50 text-blue-700', lessons: '11-20', desc: 'Emails simples, processus techniques, support de premier niveau' },
+  { level: 3, cefr: 'B1', title: 'Pre-Intermediate', color: 'bg-indigo-50 text-indigo-700', lessons: '21-30', desc: 'Réunions techniques, documentation, APIs & cloud vocabulary' },
+  { level: 4, cefr: 'B1+', title: 'Intermediate', color: 'bg-violet-50 text-violet-700', lessons: '31-40', desc: 'Présentations, networking, rédaction technique avancée' },
+  { level: 5, cefr: 'B2', title: 'Upper-Intermediate', color: 'bg-purple-50 text-purple-700', lessons: '41-50', desc: 'Négociations, architecture IT, leadership vocabulary' },
+  { level: 6, cefr: 'B2+', title: 'Advanced IT', color: 'bg-pink-50 text-pink-700', lessons: '51-60', desc: 'Case studies, client-facing English, DevOps & security' },
+  { level: 7, cefr: 'C1', title: 'Professional', color: 'bg-rose-50 text-rose-700', lessons: '61-70', desc: 'Conférences, pitch decks, certification language, AI & data' },
+  { level: 8, cefr: 'C2', title: 'Expert / Mastery', color: 'bg-amber-50 text-amber-700', lessons: '71-80', desc: 'Native-level fluency, thought leadership, cross-cultural mastery' },
+];
+
+/* ─── Page principale ─────────────────────────────────────── */
 export default function DashboardPage() {
   const [data, setData] = useState<DashboardData | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
+  const [userName, setUserName] = useState('');
+
+  const hour = new Date().getHours();
+  const greeting = hour < 12 ? 'Bonjour' : hour < 18 ? 'Bon après-midi' : 'Bonsoir';
 
   useEffect(() => {
-    apiFetch<DashboardData & { canTakeFinalAssessment?: boolean }>('/api/dashboard')
+    apiFetch<{ user: { email: string; firstName?: string } }>('/api/auth/me')
+      .then((d) => setUserName(d.user.firstName || d.user.email.split('@')[0]))
+      .catch(() => {});
+
+    apiFetch<DashboardData>('/api/dashboard')
       .then(setData)
       .catch((err) => setError(err.message))
       .finally(() => setLoading(false));
@@ -25,7 +68,7 @@ export default function DashboardPage() {
   if (loading) {
     return (
       <div className="flex items-center justify-center min-h-[400px]">
-        <Loading text="Chargement du tableau de bord..." />
+        <Loading text="Chargement de votre espace…" />
       </div>
     );
   }
@@ -33,196 +76,268 @@ export default function DashboardPage() {
   if (error || !data) {
     return (
       <div className="max-w-2xl mx-auto">
-        <div className="bg-red-50 border border-red-200 rounded-xl p-6 text-center">
-          <p className="text-red-800">{error || 'Impossible de charger le tableau de bord'}</p>
-          <Button className="mt-4" onClick={() => window.location.reload()}>
-            Réessayer
-          </Button>
+        <div className="bg-red-50 border border-red-200 rounded-2xl p-8 text-center">
+          <div className="text-4xl mb-3">⚠️</div>
+          <p className="text-red-800 font-medium">{error || 'Impossible de charger le tableau de bord'}</p>
+          <Button className="mt-4" onClick={() => window.location.reload()}>Réessayer</Button>
         </div>
       </div>
     );
   }
 
-  const greeting = () => {
-    const hour = new Date().getHours();
-    if (hour < 12) return 'Bonjour';
-    if (hour < 18) return 'Bon après-midi';
-    return 'Bonsoir';
-  };
+  const avgScore = data.domainProgress.length
+    ? Math.round(data.domainProgress.reduce((acc: number, d: DomainProgress) => acc + d.progress, 0) / data.domainProgress.length)
+    : 0;
 
   return (
-    <div className="space-y-6">
-      {/* Header */}
-      <div>
-        <h1 className="text-2xl font-bold text-slate-900">
-          {greeting()}
-        </h1>
-        <p className="text-slate-600 mt-1">Voici votre progression actuelle</p>
-      </div>
+    <div className="space-y-8">
 
-      {/* Progression générale */}
-      <Card className="p-6">
-        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-          <div>
-            <p className="text-sm font-medium text-slate-500">Progression générale</p>
-            <p className="text-4xl font-bold text-slate-900 mt-1">{data.overallProgress}%</p>
-            <p className="text-sm text-slate-600 mt-1">
-              Jour {data.currentDay} / {data.maxDays}
-            </p>
-          </div>
-          <div className="w-full sm:w-64">
-            <ProgressBar value={data.overallProgress} size="lg" showLabel={false} />
-          </div>
+      {/* ── HERO BANNER ──────────────────────────────────────── */}
+      <div className="relative bg-gradient-to-br from-blue-700 via-blue-600 to-indigo-600 rounded-3xl p-8 text-white overflow-hidden shadow-lg">
+        <div className="absolute inset-0 opacity-10">
+          <div className="absolute top-0 right-0 w-64 h-64 bg-white rounded-full translate-x-1/2 -translate-y-1/2" />
+          <div className="absolute bottom-0 left-0 w-48 h-48 bg-white rounded-full -translate-x-1/3 translate-y-1/3" />
         </div>
-      </Card>
-
-      {/* Continue Learning */}
-      {data.continueLearning && (
-        <Card className="p-6 border-blue-200 bg-blue-50">
-          <div className="flex items-center justify-between">
+        <div className="relative">
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-6">
             <div>
-              <p className="text-sm font-medium text-blue-900">Continuer l'apprentissage</p>
-              <p className="text-lg font-semibold text-blue-900 mt-1">
-                {data.continueLearning.title}
+              <div className="inline-flex items-center gap-2 bg-white/20 rounded-full px-3 py-1 text-xs font-medium mb-3">
+                <span className="w-2 h-2 bg-green-400 rounded-full animate-pulse" />
+                En ligne — Summit English Institute
+              </div>
+              <h1 className="text-3xl sm:text-4xl font-black leading-tight">
+                {greeting}{userName ? `, ${userName}` : ''} 👋
+              </h1>
+              <p className="text-blue-100 mt-2 text-lg">
+                Niveau {data.currentLevel} — {data.currentLevelTitle}
               </p>
-              <p className="text-sm text-blue-700 mt-1">
-                {data.continueLearning.moduleTitle}
-              </p>
-            </div>
-            <Link href={`/${data.continueLearning.type}s/${data.continueLearning.lessonId || data.continueLearning.moduleId}`}>
-              <Button>Continuer</Button>
-            </Link>
-          </div>
-        </Card>
-      )}
-
-      {/* Grid */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        {/* Révisions */}
-        <Card className="p-6">
-          <div className="flex items-center justify-between mb-4">
-            <h3 className="font-semibold text-slate-900">Révisions</h3>
-            {data.reviewCount > 0 && (
-              <Badge variant="warning">{data.reviewCount} à revoir</Badge>
-            )}
-          </div>
-          {data.reviewCount === 0 ? (
-            <p className="text-sm text-slate-500">Aucune révision en attente. Excellent travail !</p>
-          ) : (
-            <Link href="/review">
-              <Button variant="secondary" className="w-full">
-                Réviser maintenant ({data.reviewCount})
-              </Button>
-            </Link>
-          )}
-        </Card>
-
-        {/* Niveau actuel */}
-        <Card className="p-6">
-          <h3 className="font-semibold text-slate-900 mb-2">Niveau actuel</h3>
-          <p className="text-lg font-medium text-slate-900">
-            Niveau {data.currentLevel} — {data.currentLevelTitle}
-          </p>
-          <p className="text-sm text-slate-600 mt-1">
-            Score moyen : {Math.round(data.domainProgress.reduce((acc, d) => acc + d.progress, 0) / data.domainProgress.length)}%
-          </p>
-        </Card>
-      </div>
-
-      {/* Domaines */}
-      <Card className="p-6">
-        <h3 className="font-semibold text-slate-900 mb-4">Progression par domaine</h3>
-        <div className="space-y-4">
-          {data.domainProgress.map((domain: DomainProgress) => (
-            <ProgressBar
-              key={domain.domain}
-              value={domain.progress}
-              label={domain.domain.charAt(0).toUpperCase() + domain.domain.slice(1).replace('_', ' ')}
-              size="sm"
-            />
-          ))}
-        </div>
-      </Card>
-
-      {/* Résultats récents */}
-      {data.recentResults.length > 0 && (
-        <Card className="p-6">
-          <h3 className="font-semibold text-slate-900 mb-4">Résultats récents</h3>
-          <div className="space-y-3">
-            {data.recentResults.slice(0, 5).map((result: RecentResult) => (
-              <div key={result.id} className="flex items-center justify-between py-2 border-b border-slate-100 last:border-0">
+              <div className="flex items-center gap-4 mt-4">
                 <div>
-                  <p className="text-sm font-medium text-slate-900">{result.assessmentTitle}</p>
-                  <p className="text-xs text-slate-500">
-                    {new Date(result.completedAt).toLocaleDateString('fr-FR')}
-                  </p>
+                  <div className="text-4xl font-black">{data.overallProgress}%</div>
+                  <div className="text-blue-200 text-xs">Progression générale</div>
                 </div>
-                <div className="flex items-center gap-2">
-                  <span className="text-sm font-medium">{result.score}%</span>
-                  <Badge variant={result.result === 'passed' ? 'success' : 'error'} size="sm">
-                    {result.result === 'passed' ? 'Réussi' : 'Échoué'}
-                  </Badge>
+                <div className="h-12 w-px bg-white/30" />
+                <div>
+                  <div className="text-2xl font-bold">Jour {data.currentDay}</div>
+                  <div className="text-blue-200 text-xs">sur {data.maxDays} jours</div>
+                </div>
+                <div className="h-12 w-px bg-white/30" />
+                <div>
+                  <div className="text-2xl font-bold">{avgScore}%</div>
+                  <div className="text-blue-200 text-xs">Score moyen</div>
                 </div>
               </div>
+            </div>
+            <div className="flex flex-col gap-3 sm:min-w-[180px]">
+              {data.overallProgress === 0 ? (
+                <Link href="/diagnostic">
+                  <Button className="w-full bg-white text-blue-700 hover:bg-blue-50 font-bold text-base py-3 px-6 rounded-xl shadow-md">
+                    🎯 Commencer le diagnostic
+                  </Button>
+                </Link>
+              ) : (
+                <Link href="/course">
+                  <Button className="w-full bg-white text-blue-700 hover:bg-blue-50 font-bold text-base py-3 px-6 rounded-xl shadow-md">
+                    🗺️ Mon parcours
+                  </Button>
+                </Link>
+              )}
+              <Link href="/lessons">
+                <button className="w-full bg-white/20 hover:bg-white/30 text-white font-semibold py-2.5 px-6 rounded-xl transition-colors text-sm border border-white/30">
+                  📖 Voir les leçons
+                </button>
+              </Link>
+            </div>
+          </div>
+          <div className="mt-6">
+            <div className="flex items-center justify-between text-xs text-blue-200 mb-1.5">
+              <span>Barre de progression</span>
+              <span>{data.overallProgress}%</span>
+            </div>
+            <div className="h-2.5 bg-white/20 rounded-full overflow-hidden">
+              <div
+                className="h-full bg-white rounded-full transition-all duration-500"
+                style={{ width: `${data.overallProgress}%` }}
+              />
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* ── CONTINUER L'APPRENTISSAGE ─────────────────────────── */}
+      {data.continueLearning && (
+        <div className="bg-gradient-to-r from-emerald-50 to-teal-50 border border-emerald-200 rounded-2xl p-6 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+          <div className="flex items-center gap-4">
+            <div className="w-12 h-12 bg-emerald-100 rounded-xl flex items-center justify-center text-2xl flex-shrink-0">▶️</div>
+            <div>
+              <p className="text-xs font-bold text-emerald-700 uppercase tracking-wide">Continuer là où tu t'es arrêté</p>
+              <p className="text-lg font-bold text-slate-900 mt-0.5">{data.continueLearning.title}</p>
+              <p className="text-sm text-slate-600">{data.continueLearning.moduleTitle}</p>
+            </div>
+          </div>
+          <Link href={`/${data.continueLearning.type}s/${data.continueLearning.lessonId || data.continueLearning.moduleId}`}>
+            <Button className="bg-emerald-600 hover:bg-emerald-700 text-white font-semibold px-6 py-2.5 rounded-xl">
+              Continuer →
+            </Button>
+          </Link>
+        </div>
+      )}
+
+      {/* ── STATS PLATEFORME ──────────────────────────────────── */}
+      <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
+        <StatCard value="80" label="Leçons IT" icon="📖" color="bg-blue-600" />
+        <StatCard value="920" label="Questions QCM" icon="❓" color="bg-indigo-600" />
+        <StatCard value="320" label="Exercices pratiques" icon="🛠️" color="bg-violet-600" />
+        <StatCard value="41" label="Compétences IT" icon="🎓" color="bg-purple-600" />
+      </div>
+
+      {/* ── ACCÈS RAPIDE (12 cartes) ──────────────────────────── */}
+      <div>
+        <h2 className="text-xl font-bold text-slate-900 mb-4">🚀 Accès rapide</h2>
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+          <QuickCard href="/diagnostic" icon="🎯" title="Test Diagnostique" desc="Évalue ton niveau actuel et obtiens un plan personnalisé" />
+          <QuickCard href="/course" icon="🗺️" title="Parcours 20 Jours" desc="Programme structuré jour par jour pour progresser" />
+          <QuickCard href="/lessons" icon="📖" title="80 Leçons IT" desc="Bibliothèque complète de leçons avec vocabulaire spécialisé" />
+          <QuickCard href="/practice" icon="🛠️" title="Pratique & Lab" desc="Exercices interactifs : dialogue, rédaction, écoute" />
+          <QuickCard
+            href="/review"
+            icon="🔄"
+            title="Révisions SRS"
+            desc="Mémorisation à long terme par répétition espacée"
+            badge={data.reviewCount > 0 ? `${data.reviewCount}` : undefined}
+          />
+          <QuickCard href="/assessments" icon="📝" title="Quiz & Tests" desc="Mini-tests par niveau et par thème pour t'auto-évaluer" />
+          <QuickCard href="/progress" icon="📊" title="Statistiques" desc="Suivi détaillé de tes performances par domaine" />
+          <QuickCard href="/final-assessment" icon="🏆" title="Examen Final" desc="Validation globale de ton parcours pour la certification" />
+          <QuickCard href="/certificate" icon="🎓" title="Mon Certificat" desc="Télécharge ton diplôme de completion du programme" />
+          <QuickCard href="/profile" icon="👤" title="Mon Profil" desc="Paramètres du compte, mot de passe, préférences" />
+          <QuickCard href="/resources" icon="📚" title="Ressources" desc="PDF, fiches mémo, guides de référence et supports audio" />
+          <QuickCard href="/support" icon="💬" title="Aide & Support" desc="FAQ, tutoriels et contact avec l'équipe pédagogique" />
+        </div>
+      </div>
+
+      {/* ── PROGRESSION PAR DOMAINE ───────────────────────────── */}
+      {data.domainProgress.length > 0 && (
+        <div className="bg-white rounded-2xl p-6 border border-slate-100 shadow-sm">
+          <div className="flex items-center justify-between mb-5">
+            <h2 className="text-xl font-bold text-slate-900">📈 Maîtrise par domaine</h2>
+            <Link href="/progress" className="text-sm text-blue-600 hover:underline font-medium">Voir tout →</Link>
+          </div>
+          <div className="space-y-4">
+            {data.domainProgress.map((domain: DomainProgress) => (
+              <ProgressBar
+                key={domain.domain}
+                value={domain.progress}
+                label={domain.domain.charAt(0).toUpperCase() + domain.domain.slice(1).replace(/_/g, ' ')}
+                size="sm"
+              />
             ))}
           </div>
-        </Card>
+        </div>
       )}
 
-      {/* Évaluation finale */}
-      {data.overallProgress >= 70 && (
-        <Card className="p-6 border-green-200 bg-green-50">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-sm font-medium text-green-900">Final Assessment</p>
-              <p className="text-lg font-semibold text-green-900 mt-1">
-                You are ready for the final evaluation
-              </p>
-              <p className="text-sm text-green-700 mt-1">
-                Complete the final assessment to get your certificate
-              </p>
+      {/* ── ROADMAP DU PROGRAMME ──────────────────────────────── */}
+      <div>
+        <h2 className="text-xl font-bold text-slate-900 mb-4">🗺️ Roadmap du programme — 8 niveaux</h2>
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
+          {PROGRAM_LEVELS.map((lvl) => {
+            const isCurrent = lvl.level === data.currentLevel;
+            return (
+              <Link
+                key={lvl.level}
+                href="/lessons"
+                className={`block rounded-2xl p-4 border-2 transition-all duration-200 hover:shadow-md ${
+                  isCurrent
+                    ? 'border-blue-500 bg-blue-50 shadow-sm'
+                    : 'border-transparent bg-white hover:border-slate-200'
+                }`}
+              >
+                <div className="flex items-center justify-between mb-2">
+                  <span className={`text-xs font-bold px-2 py-0.5 rounded-full ${lvl.color}`}>
+                    {lvl.cefr}
+                  </span>
+                  {isCurrent && <span className="text-xs bg-blue-600 text-white px-2 py-0.5 rounded-full font-medium">Actuel</span>}
+                </div>
+                <p className="text-xs text-slate-400 font-medium">Niveau {lvl.level} — Leçons {lvl.lessons}</p>
+                <p className="text-sm font-bold text-slate-900 mt-1">{lvl.title}</p>
+                <p className="text-xs text-slate-500 mt-1 leading-relaxed">{lvl.desc}</p>
+              </Link>
+            );
+          })}
+        </div>
+      </div>
+
+      {/* ── RÉSULTATS RÉCENTS + POINTS FORTS/FAIBLES ─────────── */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+
+        {/* Résultats récents */}
+        {data.recentResults.length > 0 && (
+          <div className="bg-white rounded-2xl p-6 border border-slate-100 shadow-sm">
+            <h2 className="text-lg font-bold text-slate-900 mb-4">🕐 Résultats récents</h2>
+            <div className="space-y-3">
+              {data.recentResults.slice(0, 5).map((result: RecentResult) => (
+                <div key={result.id} className="flex items-center justify-between py-2.5 border-b border-slate-50 last:border-0">
+                  <div>
+                    <p className="text-sm font-medium text-slate-900">{result.assessmentTitle}</p>
+                    <p className="text-xs text-slate-400">{new Date(result.completedAt).toLocaleDateString('fr-FR')}</p>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <span className="text-sm font-bold">{result.score}%</span>
+                    <Badge variant={result.result === 'passed' ? 'success' : 'error'} size="sm">
+                      {result.result === 'passed' ? '✓ Réussi' : '✗ Échoué'}
+                    </Badge>
+                  </div>
+                </div>
+              ))}
             </div>
-            <Link href="/final-assessment">
-              <Button>Start Final Assessment</Button>
+            <Link href="/assessments" className="block mt-3 text-center text-sm text-blue-600 hover:underline font-medium">
+              Voir tous les résultats →
             </Link>
           </div>
-        </Card>
-      )}
+        )}
 
-      {/* Points forts / faibles */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        {/* Points à améliorer */}
         {data.weakAreas.length > 0 && (
-          <Card className="p-6">
-            <h3 className="font-semibold text-slate-900 mb-4">Points à améliorer</h3>
-            <div className="space-y-3">
+          <div className="bg-white rounded-2xl p-6 border border-slate-100 shadow-sm">
+            <h2 className="text-lg font-bold text-slate-900 mb-4">⚡ Points à renforcer</h2>
+            <div className="space-y-2">
               {data.weakAreas.slice(0, 5).map((area) => (
                 <Link
                   key={area.skillId}
                   href={`/review?skill=${area.skillId}`}
-                  className="flex items-center justify-between py-2 hover:bg-slate-50 rounded-lg px-2 -mx-2 transition-colors"
+                  className="flex items-center justify-between py-2.5 px-3 rounded-xl hover:bg-orange-50 transition-colors group"
                 >
-                  <span className="text-sm text-slate-700">{area.skillId}</span>
-                  <span className="text-sm font-medium text-slate-900">{area.masteryScore}%</span>
+                  <span className="text-sm text-slate-700 group-hover:text-orange-800">{area.skillId}</span>
+                  <span className="text-sm font-bold text-orange-600">{area.masteryScore}%</span>
                 </Link>
               ))}
             </div>
-          </Card>
-        )}
-
-        {data.strongAreas.length > 0 && (
-          <Card className="p-6">
-            <h3 className="font-semibold text-slate-900 mb-4">Points forts</h3>
-            <div className="space-y-3">
-              {data.strongAreas.slice(0, 5).map((area) => (
-                <div key={area.skillId} className="flex items-center justify-between py-2">
-                  <span className="text-sm text-slate-700">{area.skillId}</span>
-                  <span className="text-sm font-medium text-green-600">{area.masteryScore}%</span>
-                </div>
-              ))}
-            </div>
-          </Card>
+            <Link href="/review" className="block mt-3 text-center text-sm text-orange-600 hover:underline font-medium">
+              Lancer les révisions →
+            </Link>
+          </div>
         )}
       </div>
+
+      {/* ── EXAMEN FINAL (si éligible) ───────────────────────── */}
+      {data.overallProgress >= 70 && (
+        <div className="bg-gradient-to-r from-amber-50 to-yellow-50 border border-amber-200 rounded-2xl p-6 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+          <div className="flex items-center gap-4">
+            <div className="text-4xl">🏆</div>
+            <div>
+              <p className="text-xs font-bold text-amber-700 uppercase tracking-wide">Félicitations !</p>
+              <p className="text-lg font-bold text-slate-900">Tu es prêt pour l'examen final</p>
+              <p className="text-sm text-slate-600 mt-0.5">Valide ton parcours et obtiens ton certificat Summit English</p>
+            </div>
+          </div>
+          <Link href="/final-assessment">
+            <Button className="bg-amber-500 hover:bg-amber-600 text-white font-bold px-6 py-3 rounded-xl shadow-md whitespace-nowrap">
+              Passer l'examen →
+            </Button>
+          </Link>
+        </div>
+      )}
+
     </div>
   );
 }
