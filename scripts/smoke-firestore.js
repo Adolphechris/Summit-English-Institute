@@ -20,9 +20,9 @@ async function runSmokeTest() {
   const checks = [
     { name: 'Niveaux (8)', pass: seedData.levels && seedData.levels.length === 8 },
     { name: 'Modules (>=15)', pass: seedData.modules && seedData.modules.length >= 15 },
-    { name: 'Leçons (>=50)', pass: seedData.lessons && seedData.lessons.length >= 50 },
+    { name: 'Leçons (80)', pass: seedData.lessons && seedData.lessons.length === 80 },
     { name: 'Compétences (41)', pass: seedData.skills && seedData.skills.length === 41 },
-    { name: 'Questions (>=500)', pass: seedData.questions && seedData.questions.length >= 500 },
+    { name: 'Questions (>=900)', pass: seedData.questions && seedData.questions.length >= 900 },
     { name: 'Compte Admin présent', pass: seedData.users && seedData.users.some(u => u.role === 'admin') },
     { name: 'Compte Student présent', pass: seedData.users && seedData.users.some(u => u.role === 'student') },
     { name: 'Évaluation finale (ID 999) présente', pass: seedData.assessments && seedData.assessments.some(a => a.id === 999) },
