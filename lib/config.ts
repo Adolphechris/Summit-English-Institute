@@ -5,6 +5,9 @@
 import { APP_CONFIG } from './constants';
 
 const isProduction = process.env.NODE_ENV === 'production';
+// Phase de build Next.js (next build) : NODE_ENV=production mais aucun secret
+// runtime n'est requis tant que le serveur ne démarre pas réellement.
+const isBuildPhase = process.env.NEXT_PHASE === 'phase-production-build';
 
 /**
  * Récupérer une variable d'environnement requise.
@@ -13,8 +16,9 @@ const isProduction = process.env.NODE_ENV === 'production';
  */
 function requiredEnv(name: string, devFallback: string): string {
   const value = process.env[name];
-  if (!value || value === devFallback || value.trim() === '') {
-    if (isProduction) {
+  const trimmed = value?.trim();
+  if (!trimmed || trimmed === devFallback) {
+    if (isProduction && !isBuildPhase) {
       throw new Error(
         `[CONFIG FATALE] ${name} est absent ou contient une valeur par défaut de développement. ` +
           `Refus de démarrer en production sans secret configuré.`
@@ -22,7 +26,7 @@ function requiredEnv(name: string, devFallback: string): string {
     }
     return devFallback;
   }
-  return value;
+  return trimmed;
 }
 
 export const config = {
@@ -39,11 +43,11 @@ export const config = {
     finalAssessmentId: APP_CONFIG.finalAssessmentId,
   },
   auth: {
-    secret: process.env.AUTH_SECRET || 'summit_english_prod_secret_key_2026_x89a7f239b',
+    secret: requiredEnv('AUTH_SECRET', 'dev-only-secret-for-local-testing'),
     expiry: process.env.AUTH_EXPIRY || '7d',
   },
   firebase: {
-    projectId: process.env.FIREBASE_PROJECT_ID || process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID || 'summit-english-institut',
+    projectId: process.env.FIREBASE_PROJECT_ID || process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID || 'summit-english-institute',
     clientEmail: process.env.FIREBASE_CLIENT_EMAIL || '',
     privateKey: process.env.FIREBASE_PRIVATE_KEY || '',
   },

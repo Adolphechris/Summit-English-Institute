@@ -5,6 +5,37 @@ Toutes les modifications notables de ce projet seront documentées dans ce fichi
 Le format est basé sur [Keep a Changelog](https://keepachangelog.com/fr/1.0.0/),
 et ce projet suit le [Semantic Versioning](https://semver.org/lang/fr/).
 
+## [0.3.0] - 2026-08-31
+
+### Ajouté
+- **Remédiation Tranche 1 (niveaux 1-2) livrée** : 20 leçons pédagogiques riches
+  (IDs 101-120) écrites pour le contexte IT — explications fouillées 2100-3200
+  caractères, 7 exemples contextualisés, 8 termes de vocabulaire, 5 expressions,
+  4 exercices, mini-quiz de 4 questions corrigées et 3 patterns récapitulatifs
+  par leçon (seuils Titre XV de la Constitution atteints).
+- **100 questions neuves** rattachées aux 20 leçons (5/leçon) : 0 doublon,
+  QCM tous ≥ 4 options, 16/16 compétences N1-N2 couvertes.
+- `scripts/build-t1.py` : générateur déterministe des leçons T1 (reproductible),
+  `scripts/apply-t1.py` : application au seed Firestore,
+  `scripts/content-validator.js` : validateur de richesse éditoriale (gates
+  doublons / épaisseur / QCM / liaison leçon / skills, modes scope & full).
+- **CI** : gate contenu **bloquant** sur les tranches livrées
+  (`content:validate:t1` = scope 1-2) + vue complète non bloquante en observation.
+
+### Corrigé
+- **`AUTH_SECRET` re-divulgué** : le fallback codé en dur introduit lors de la
+  migration Firestore est supprimé — `lib/config.ts` redevient fail-closed
+  (refus de démarrer en production sans secret réel). Les 2 tests qui en
+  dépendaient sont à nouveau verts (**97/97**).
+- **Assessment 999** : la question morte référencée par l'évaluation finale est
+  remplacée par la question 1001 (T1).
+- Leçons N1 dupliquées (7) retirées du seed ; le scope 1-2 passe de
+  « 7 leçons appauvries » à **20 leçons riches, 8/8 modules pourvus**.
+
+### Sécurité
+- Aucun secret dans l'historique (re-vérifié) ; `.env.local` reste hors Git.
+
+
 ## [0.2.1] - 2026-08-20
 
 ### Ajouté

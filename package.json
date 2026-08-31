@@ -10,7 +10,11 @@
     "firestore:seed": "ts-node --project tsconfig.json -e \"require('./scripts/seed-firestore.ts')\"",
     "firestore:smoke": "node scripts/smoke-firestore.js",
     "test": "jest",
-    "test:watch": "jest --watch"
+    "test:watch": "jest --watch",
+    "content:validate": "node scripts/content-validator.js",
+    "content:validate:t1": "node scripts/content-validator.js --scope=1-2",
+    "content:validate:full": "node scripts/content-validator.js --full",
+    "content:inventory": "node scripts/content-validator.js --full --json"
   },
   "dependencies": {
     "@google/genai": "^2.19.0",

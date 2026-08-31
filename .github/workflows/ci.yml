@@ -15,7 +15,6 @@ jobs:
       # En CI (NODE_ENV=test) les valeurs de dev sont tolérées, mais on les
       # injecte explicitement pour couvrir aussi les scénarios réels.
       AUTH_SECRET: ci-test-secret-0123456789abcdef
-      DATABASE_URL: postgresql://ci:ci@localhost:5432/summit_english
       NEXT_PUBLIC_APP_URL: http://localhost:3000
 
     steps:
@@ -42,3 +41,14 @@ jobs:
 
       - name: Build de production (next build)
         run: npm run build
+
+      - name: Standards de contenu — tranches livrées (T1 = niveaux 1-2) BLOQUANT
+        run: npm run content:validate:t1
+        # Bloquant : le scope couvre exactement les tranches remédiées et poussées.
+        # Évolution : T2 → --scope=1-5, T3 → --scope=1-8 (REMEDIATION_TRACKER.md).
+
+      - name: Standards de contenu — vue complète (observation, non bloquant)
+        run: npm run content:validate:full
+        # Non bloquant tant que T2-T5 n'ont pas rattrapé la baseline (43 leçons
+        # insuffisantes, 209 doublons questions — REMEDIATION_PLAN.md §4).
+        continue-on-error: true

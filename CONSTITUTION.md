@@ -1,6 +1,7 @@
 CONSTITUTION FONDAMENTALE DU CENTRE DE FORMATION EN ANGLAIS INFORMATIQUE ET PROFESSIONNEL
 
-Version : 1.0 — Document directeur suprême
+Version : 2.0 — Document directeur suprême
+> **Amendement 2.0 (31/08/2026)** : ajout du Titre XVI « Standards de contenu & remédiation » (Articles 44-49), faisant suite à l'audit de contenu du 31/08/2026.
 
 ---
 
@@ -741,6 +742,61 @@ Tests techniques → tests pédagogiques → tests d'interface → tests de prog
 
 ---
 
+TITRE XVI — STANDARDS DE CONTENU & REMÉDIATION
+
+(Ajouté par amendement du 31 août 2026 — Version 2.0, à la suite de l'audit de contenu qui a établi que les contenus existants violaient les standards de qualité : leçons dupliquées, épaisseur insuffisante, banque de questions non indexée.)
+
+Article 44 — Statut des standards de contenu
+
+Les standards énoncés au présent titre ont la même force que les autres règles de la présente Constitution. Ils s'imposent à tout contenu pédagogique (leçon, exemple, vocabulaire, expression, exercice, question, évaluation) avant sa publication.
+
+Le contenu n'est pas une quantité de pages mais une densité mesurable. Chaque indicateur du présent titre est vérifiable par un outil automatique — le validator de contenu — qui constitue l'instrument d'application du présent titre.
+
+Article 45 — Norme minimale d'une leçon
+
+Toute leçon publiée doit contenir, au minimum :
+
+1. une explication structurée d'au moins 1800 caractères (règle → formes → pièges fréquents → conseil d'usage en contexte informatique ou professionnel) ;
+2. trois patterns réutilisables, chacun illustré par au moins quatre exemples d'application ;
+3. entre six et huit exemples contextualisés (phrase, sens, contexte d'usage informatique ou professionnel) ;
+4. entre huit et douze entrées de vocabulaire (mot, définition, traduction, exemple, exemple informatique) ;
+5. entre quatre et six expressions idiomatiques ou professionnelles (expression, usage, exemple, traduction) ;
+6. entre quatre et six activités de production (choix multiple, complétion, transformation, construction, scénario, correction) ;
+7. un mini-quiz d'au moins quatre questions auto-corrigées ;
+8. un résumé de trois à cinq phrases et une rubrique « à retenir ».
+
+Chaque niveau comporte dix leçons. Toute leçon est un contenu unique : la duplication d'une leçon existante sous un autre identifiant est interdite.
+
+Article 46 — Anti-duplication et indexation
+
+Un actif pédagogique = un contenu unique.
+
+1. Aucun titre de leçon ne peut apparaître deux fois avec le même contenu, ni au sein d'un même niveau, ni entre niveaux.
+2. Aucun module ne peut être dupliqué (titre + niveau) ni rester orphelin (sans leçon rattachée).
+3. Toute question est indexée : identifiant, matière, niveau, module, compétence, difficulté, type, notion, leçon de rattachement.
+4. Aucun texte de question ne peut être dupliqué dans la banque.
+5. Toute question à choix multiple comporte au moins quatre options.
+6. Toute question est rattachée à une leçon et à une compétence réelles.
+
+Article 47 — Banque de questions massive
+
+La banque de questions est l'actif central du système d'évaluation. Elle doit atteindre au moins 900 questions uniques, intégralement indexées, couvrant les 41 compétences du référentiel avec au moins cinq questions par compétence.
+
+Article 48 — Gate automatique de publication
+
+Aucun contenu ne peut être publié en ligne sans que le validator de contenu exécute avec succès l'ensemble des gates. Le validator est intégré à la chaîne d'intégration continue et y devient bloquant dès la clôture de la tranche 1.
+
+Le cycle obligatoire de production est le suivant : petit lot → validation automatique → tests et build → mise à jour du suivi → commit → publication en ligne.
+
+Article 49 — Non-abaissement des seuils et remédiation
+
+Les seuils du présent titre ne peuvent être abaissés que par un amendement explicite de la présente Constitution, documenté avant application (règle 17 du Titre XIV).
+
+La remédiation du contenu existant est organisée en tranches successives (fondations, niveaux 1-2, niveaux 3-5, niveaux informatique et cybersécurité 6-8, banque massive, consolidation), chacune close par un gate de sortie complet et une publication en ligne. Le suivi vivant est assuré par les documents de remédiation officiels du dépôt.
+
+---
+
+
 CONCLUSION CONSTITUTIONNELLE
 
 Le centre doit être considéré comme un système pédagogique complet, et non comme une simple collection de cours.
@@ -755,4 +811,4 @@ La réussite du projet sera déterminée en priorité par la qualité de son arc
 
 Le présent document constitue la référence fondamentale à partir de laquelle sera rédigé le cahier des charges détaillé.
 
-FIN DE LA CONSTITUTION — VERSION 1.0
+FIN DE LA CONSTITUTION — VERSION 2.0

@@ -1,7 +1,166 @@
-# TODO MAÎTRE — Summit English Institute
+# TODO — REMÉDIATION CONTENU — Summit English Institute
 
-> Document de suivi du projet. Chaque tâche a un état, des dépendances et des critères de validation.
-> Une tâche est DONE uniquement lorsque : fonctionnalité réalisée + testée + validée.
+> Tâches opérationnelles du chantier de remédiation (contrat : `REMEDIATION_PLAN.md`).
+> Suivi visuel par niveau : `REMEDIATION_TRACKER.md`. Arbitre automatique : `scripts/content-validator.js`.
+> L'ancien TODO maître (ère PostgreSQL, jalons M0-M6) est archivé dans l'historique Git — les tâches
+> encore pertinentes (design system, responsive…) sont reprises dans le backlog T5 ci-dessous.
+
+## ÉTATS
+
+| État | Signification |
+|---|---|
+| ⬜ BACKLOG | Pas commencée |
+| 🔄 IN PROGRESS | En cours |
+| ⛔ BLOCKED | Bloquée par une dépendance |
+| ✅ DONE | Validée (gate(s) verts + commit + push) |
+
+---
+
+## T0 — FONDATIONS (outils, CI, Constitution)
+
+### R-000 : Diagnostic baseline chiffré
+- **État** : ✅ DONE — mesuré, pas estimé : 209 textes de questions dupliqués, 41 modules orphelins, 433/434 questions sans leçon, 108 QCM <4 options, épaisseur leçon ~119 car. → `content/inventory.json`, `AUDIT_CONTENT.md`
+
+### R-001 : Validator automatique `scripts/content-validator.js`
+- **État** : ✅ DONE
+- **Critères** : 30+ gates (leçons/niveau, épaisseur, doublons leçons/modules/questions, QCM ≥4 options, liens leçon↔question, skills ≥5 questions, cible 900) ; options `--scope=`, `--full`, `--json` ; exit 1 = publication bloquée
+
+### R-002 : Inventory vivant `content/inventory.json`
+- **État** : ✅ DONE
+- **Critères** : régénéré à chaque gate via `npm run content:inventory`
+
+### R-003 : Scripts npm + intégration CI (GitHub Actions)
+- **État** : ✅ DONE
+- **Critères** : `content:validate`, `content:validate:full`, `content:inventory` ; step CI dédié (non bloquant jusqu'au gate T1, **bloquant ensuite**) ; CI verte (tsc + eslint + jest + build)
+
+### R-004 : Amendement Constitution v2.0 — « Standards de contenu & remédiation »
+- **État** : ✅ DONE
+- **Critères** : Titre XVI ajouté (Articles 44-49 : norme leçon, anti-duplication, banque massive, gate, non-abaissement) ; version 2.0 documentée
+
+### R-005 : Rapport d'audit baseline `AUDIT_CONTENT.md`
+- **État** : ✅ DONE
+- **Critères** : rapport généré du validator full-scope, conservé comme référence « avant remédiation »
+
+### R-006 : Remise en conformité AUTH_SECRET (régression sécurité détectée à l'audit)
+- **État** : ✅ DONE
+- **Critères** : fail-closed restauré au runtime production (throw si absent/valeur dev) ; fallback dev-only toléré en dev/test/build (`NEXT_PHASE`) ; secret codé en dur supprimé ; tests 97/97 verts
+
+## T1 — NIVEAUX 1-2 (20 leçons riches + ~350 questions)
+
+### R-101 : Niveau 1 — 10 leçons riches (plage ids 101-120, sans collision)
+- **État** : ⬜ BACKLOG — **démarre après validation du plan par le fondateur**
+- **Norme par leçon** (Constitution art. 45) : explication ≥1800 car., 3 patterns, 6-8 exemples (itContext), 8-12 vocab (itExample), 4-6 expressions, 4-6 pratique, mini-quiz 4 questions, résumé + à retenir
+- **Critères** : validator scope 1-2 au vert (0 erreur, 0 doublon)
+
+### R-102 : Niveau 2 — 10 leçons riches (plage ids 121-140)
+- **État** : ⬜ BACKLOG
+- **Critères** : idem R-101
+
+### R-103 : Déduplication modules niveaux 1-2 (17 modules en scope)
+- **État** : ⬜ BACKLOG
+- **Critères** : 0 module orphelin, 0 module dupliqué (titre+niveau) en scope
+
+### R-104 : ~350 questions uniques indexées pour N1-N2
+- **État** : ⬜ BACKLOG
+- **Critères** : 100 % liées à une leçon + compétence + module ; QCM ≥4 options ; 0 texte dupliqué ; skills du scope ≥5 questions chacune
+
+### R-105 : Gate T1 + publication
+- **État** : ⛔ BLOCKED (dépend R-101→R-104)
+- **Critères** : validator (all) — N1/N2 conformes ; tests verts ; build OK ; seed idempotent ; tracker MAJ ; commit + push ; **bascule du step CI validator en bloquant**
+
+---
+
+## T2 — NIVEAUX 3-5
+
+### R-201 : Déduplication leçons N3-N4 (19 leçons → uniques, enrichies à la norme)
+- **État** : ⬜ BACKLOG
+- **Critères** : 0 titre dupliqué en scope 3-5 ; conformité art. 45
+
+### R-202 : Niveau 5 — création complète (10 leçons « Everyday & Professional », plage ids 141-150)
+- **État** : ⬜ BACKLOG
+- **Critères** : idem R-101
+
+### R-203 : Questions N3-N5 (≈300 uniques indexées)
+- **État** : ⬜ BACKLOG
+- **Critères** : idem R-104
+
+### R-204 : Gate T2 + publication
+- **État** : ⛔ BLOCKED (dépend R-201→R-203)
+- **Critères** : idem R-105
+
+---
+
+## T3 — NIVEAUX IT/CYBER 6-8
+
+### R-301 : Déduplication + enrichissement N6-N8 (24 leçons → uniques, norme complète)
+- **État** : ⬜ BACKLOG
+- **Critères** : 0 doublon ; vocabulaire IT/cyber par domaine (system administration, incident response, networking…) ; conformité art. 45
+
+### R-302 : Questions N6-N8 (≈250 uniques indexées, vocabulaire technique)
+- **État** : ⬜ BACKLOG
+- **Critères** : idem R-104
+
+### R-303 : Couverture 41/41 compétences (≥5 questions chacune)
+- **État** : ⛔ BLOCKED (dépend R-302)
+- **Critères** : gate skills du validator au vert en `--full`
+
+### R-304 : Gate T3 + publication
+- **État** : ⛔ BLOCKED (dépend R-301→R-303)
+- **Critères** : idem R-105
+
+---
+
+## T4 — BANQUE MASSIVE & MOTEUR
+
+### R-401 : Consolidation banque ≥900 questions uniques
+- **État** : ⛔ BLOCKED (dépend T1-T3)
+- **Critères** : `--full` : 0 doublon, 100 % QCM ≥4 options, 100 % liées à une leçon
+
+### R-402 : Mini-quiz intégrés aux 80 leçons (4 questions auto-corrigées chacune)
+- **État** : ⛔ BLOCKED (dépend T1-T3)
+- **Critères** : gate quiz du validator au vert
+
+### R-403 : Curation Gemini AI (génération assistée + relecture humaine obligatoire)
+- **État** : ⬜ BACKLOG
+- **Critères** : toute question générée par IA relue avant insertion ; validator vert
+
+### R-404 : Gate T4 + publication
+- **État** : ⛔ BLOCKED (dépend R-401→R-403)
+- **Critères** : idem R-105
+
+---
+
+## T5 — CONSOLIDATION
+
+### R-501 : README/CHANGELOG réels (stack Firestore, scripts content:*, comptes seed)
+- **État** : ⬜ BACKLOG
+- **Critères** : plus aucune référence PostgreSQL/pg obsolète ; instructions seed + validator exactes
+
+### R-502 : Design system + responsive (reprises du backlog legacy)
+- **État** : ⬜ BACKLOG
+- **Critères** : composants Button/Card/ProgressBar ; mobile/tablette/desktop
+
+### R-503 : Revue humaine finale des tranches + validation fondateur
+- **État** : ⛔ BLOCKED (dépend R-501, R-502)
+- **Critères** : échantillon de leçons/questions relu et approuvé
+
+### R-504 : Push final + tag `content-v2`
+- **État** : ⛔ BLOCKED (dépend R-503)
+- **Critères** : tout vert (CI, validator full, tests, build) ; en ligne
+
+---
+
+## RÈGLE DE FLUX (chaque tâche)
+
+```
+Petit lot → validator (scope) → tests + build → tracker MAJ → commit → push
+```
+
+Aucun contenu ne part en ligne avec le validator rouge. Les seuils ne sont jamais abaissés sans amendement de la Constitution (Titre XVI, art. 49).
+
+---
+
+*Document vivant — dernière MAJ : 2026-08-31 (T0 close ; T1 en attente de validation du plan).*
 
 ---
 

@@ -22,7 +22,7 @@ async function runSmokeTest() {
     { name: 'Modules (>=40)', pass: seedData.modules && seedData.modules.length >= 40 },
     { name: 'Leçons (>=50)', pass: seedData.lessons && seedData.lessons.length >= 50 },
     { name: 'Compétences (41)', pass: seedData.skills && seedData.skills.length === 41 },
-    { name: 'Questions (434)', pass: seedData.questions && seedData.questions.length === 434 },
+    { name: 'Questions (>=500)', pass: seedData.questions && seedData.questions.length >= 500 },
     { name: 'Compte Admin présent', pass: seedData.users && seedData.users.some(u => u.role === 'admin') },
     { name: 'Compte Student présent', pass: seedData.users && seedData.users.some(u => u.role === 'student') },
     { name: 'Évaluation finale (ID 999) présente', pass: seedData.assessments && seedData.assessments.some(a => a.id === 999) },
