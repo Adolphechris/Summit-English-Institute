@@ -7,7 +7,7 @@ BASE = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 NOW = "2026-08-31T08:00:00.000Z"
 LESSONS = []
 
-def L(id_, mod, lvl, order, title, objective, expl, ex, voc, expr, itc, prac, summ, quiz=None, patterns=None):
+def L(id_, mod, lvl, order, title, objective, expl, ex, voc, expr, itc, quiz, summ, prac, patterns=None):
     LESSONS.append({
         "id": id_, "moduleId": mod, "levelId": lvl, "title": title,
         "objective": objective, "explanation": expl, "examples": ex,
