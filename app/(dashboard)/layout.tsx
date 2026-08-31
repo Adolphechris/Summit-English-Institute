@@ -1,9 +1,30 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
 import { apiFetch, clearToken } from '@/lib/apiClient';
+
+type UserInfo = { email: string; firstName?: string; lastName?: string; role?: string };
+
+const USER_CACHE_KEY = 'sei_user_cache';
+
+function getCachedUser(): UserInfo | null {
+  try {
+    const raw = typeof window !== 'undefined' ? localStorage.getItem(USER_CACHE_KEY) : null;
+    return raw ? (JSON.parse(raw) as UserInfo) : null;
+  } catch {
+    return null;
+  }
+}
+
+function setCachedUser(u: UserInfo) {
+  try { localStorage.setItem(USER_CACHE_KEY, JSON.stringify(u)); } catch { /* ok */ }
+}
+
+function clearCachedUser() {
+  try { localStorage.removeItem(USER_CACHE_KEY); } catch { /* ok */ }
+}
 
 const navSections = [
   {
@@ -44,22 +65,34 @@ const navSections = [
 export default function DashboardLayout({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
   const router = useRouter();
-  const [user, setUser] = useState<{ email: string; firstName?: string; lastName?: string; role?: string } | null>(null);
+  // Initialise depuis le cache — pas de spinner au 1er rendu
+  const [user, setUser] = useState<UserInfo | null>(() => getCachedUser());
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const [verifying, setVerifying] = useState(true);
 
   useEffect(() => {
-    apiFetch<{ user: { email: string; firstName?: string; lastName?: string; role?: string } }>('/api/auth/me')
-      .then((data) => setUser(data.user))
-      .catch(() => router.push('/login'));
+    // Vérifie la session en arrière-plan sans bloquer l'UI
+    apiFetch<{ user: UserInfo }>('/api/auth/me')
+      .then((data) => {
+        setUser(data.user);
+        setCachedUser(data.user);
+      })
+      .catch(() => {
+        clearCachedUser();
+        router.push('/login');
+      })
+      .finally(() => setVerifying(false));
   }, [router]);
 
-  const handleLogout = async () => {
+  const handleLogout = useCallback(async () => {
     try { await apiFetch('/api/auth/logout', { method: 'POST' }); } catch { /* ok */ }
     clearToken();
+    clearCachedUser();
     router.push('/');
-  };
+  }, [router]);
 
-  if (!user) {
+  // Pas de cache ET pas encore de réponse → afficher spinner (1ère visite uniquement)
+  if (!user && verifying) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-slate-100">
         <div className="text-center">
@@ -69,6 +102,8 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
       </div>
     );
   }
+
+  if (!user) return null;
 
   const initials = user.firstName
     ? `${user.firstName[0]}${user.lastName?.[0] ?? ''}`.toUpperCase()
@@ -114,7 +149,6 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
 
   return (
     <div className="min-h-screen bg-slate-100">
-
       {/* Header mobile */}
       <header className="lg:hidden bg-white border-b border-slate-200 px-4 py-3 flex items-center justify-between sticky top-0 z-40 shadow-sm">
         <button
@@ -143,7 +177,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
               <div className="w-8 h-8 bg-gradient-to-br from-blue-800 to-blue-600 rounded-lg flex items-center justify-center text-white font-bold text-xs">SEI</div>
               <span className="font-semibold text-slate-900">Navigation</span>
             </div>
-            <button onClick={() => setMobileMenuOpen(false)} className="p-2 text-slate-600 hover:text-slate-900 rounded-lg hover:bg-slate-100" aria-label="Fermer">
+            <button onClick={() => setMobileMenuOpen(false)} className="p-2 text-slate-600 rounded-lg hover:bg-slate-100" aria-label="Fermer">
               <svg className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
               </svg>
@@ -162,7 +196,6 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
       <div className="flex">
         {/* Sidebar desktop */}
         <aside className="hidden lg:flex flex-col w-72 bg-white border-r border-slate-200 fixed h-screen shadow-sm">
-          {/* Logo */}
           <div className="p-5 border-b border-slate-100">
             <div className="flex items-center gap-3">
               <div className="w-11 h-11 bg-gradient-to-br from-blue-800 to-blue-600 rounded-xl flex items-center justify-center text-white font-black text-sm shadow-md">SEI</div>
@@ -175,7 +208,6 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
 
           <SidebarNav />
 
-          {/* User footer */}
           <div className="p-4 border-t border-slate-100 bg-slate-50">
             <div className="flex items-center gap-3 mb-3">
               <div className="w-10 h-10 bg-gradient-to-br from-blue-600 to-indigo-600 rounded-full flex items-center justify-center text-white font-bold text-sm shadow-sm flex-shrink-0">
@@ -196,7 +228,6 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
           </div>
         </aside>
 
-        {/* Main */}
         <main className="flex-1 lg:ml-72 min-h-screen">
           <div className="max-w-6xl mx-auto p-4 sm:p-6 lg:p-8">
             {children}
