@@ -170,9 +170,9 @@ export default function PricingCards({
       )}
 
       <p className="mt-6 text-center text-xs text-slate-400">
-        Paiement sécurisé par carte bancaire via Stripe. Les prix sont affichés
-        et facturés dans votre monnaie locale. Paiement local Maroc (CMI)
-        bientôt disponible.
+        Paiement sécurisé en ligne par carte bancaire (Stripe ou Gumroad /
+        Lemon Squeezy selon votre région). Les prix sont affichés et facturés
+        dans votre monnaie locale.
       </p>
     </div>
   );
