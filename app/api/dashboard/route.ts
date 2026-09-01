@@ -132,6 +132,30 @@ export async function GET(request: Request) {
     // Révisions en attente
     const dueReviews = reviewItems.filter((i) => i.status === 'due' || i.status === 'in_review');
 
+    // Série (streak) + activité de la semaine — calculées depuis les tentatives réelles
+    const dayKey = (d: Date) => d.toISOString().slice(0, 10);
+    const activeDays = new Set(attempts.map((a) => dayKey(new Date(a.createdAt || Date.now()))));
+    const todayKey = dayKey(new Date());
+    let streak = 0;
+    const cursor = new Date();
+    if (!activeDays.has(dayKey(cursor))) cursor.setUTCDate(cursor.getUTCDate() - 1);
+    while (activeDays.has(dayKey(cursor))) {
+      streak += 1;
+      cursor.setUTCDate(cursor.getUTCDate() - 1);
+    }
+    const dayLabels = ['Dim', 'Lun', 'Mar', 'Mer', 'Jeu', 'Ven', 'Sam'];
+    const weekActivity = Array.from({ length: 7 }).map((_, i) => {
+      const d = new Date();
+      d.setUTCDate(d.getUTCDate() - (6 - i));
+      return { date: dayKey(d), label: dayLabels[d.getUTCDay()], count: 0 };
+    });
+    attempts.forEach((a) => {
+      const k = dayKey(new Date(a.createdAt || Date.now()));
+      const slot = weekActivity.find((w) => w.date === k);
+      if (slot) slot.count += 1;
+    });
+    const todayAttempts = weekActivity.find((w) => w.date === todayKey)?.count || 0;
+
     // Continuer l'apprentissage
     const moduleMap = new Map(allModules.map((m) => [m.id, m]));
     const firstLesson = allLessons[0];
@@ -157,6 +181,9 @@ export async function GET(request: Request) {
       strongAreas,
       recentResults,
       domainProgress,
+      streak,
+      weekActivity,
+      todayAttempts,
     };
 
     const canTakeFinalAssessment = (progress?.overallProgress || 0) >= 70;

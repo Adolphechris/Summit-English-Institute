@@ -1,14 +1,13 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { Card } from '@/components/ui/Card';
 import { Button } from '@/components/ui/Button';
 import { Badge } from '@/components/ui/Badge';
-import { Loading } from '@/components/ui/Loading';
+import { PageSkeleton } from '@/components/ui/Skeleton';
 import { ProgressBar } from '@/components/ui/ProgressBar';
-import { apiFetch } from '@/lib/apiClient';
+import { useApi } from '@/lib/useApi';
 
 interface PracticeExercise {
   id: number;
@@ -20,29 +19,21 @@ interface PracticeExercise {
 }
 
 export default function PracticePage() {
-  const router = useRouter();
-  const [exercises, setExercises] = useState<PracticeExercise[]>([]);
   const [currentIndex, setCurrentIndex] = useState(0);
   const [answers, setAnswers] = useState<Map<number, string>>(new Map());
   const [showResults, setShowResults] = useState(false);
-  const [loading, setLoading] = useState(true);
   const [skillId, setSkillId] = useState<string | null>(null);
+  const [path, setPath] = useState<string | null>(null);
 
   useEffect(() => {
     const url = new URL(window.location.href);
     const skill = url.searchParams.get('skill');
     setSkillId(skill);
+    setPath(`/api/practice?skill=${skill || ''}&limit=10`);
+  }, []);
 
-    // Charger des exercices de pratique
-    apiFetch<{ exercises: PracticeExercise[] }>(`/api/practice?skill=${skill || ''}&limit=10`)
-      .then((data) => {
-        setExercises(data.exercises || []);
-        setLoading(false);
-      })
-      .catch(() => {
-        router.push('/login');
-      });
-  }, [router]);
+  const { data, isLoading } = useApi<{ exercises: PracticeExercise[] }>(path);
+  const exercises = data?.exercises || [];
 
   const handleAnswer = (exerciseId: number, answer: string) => {
     setAnswers((prev) => new Map(prev).set(exerciseId, answer));
@@ -60,10 +51,10 @@ export default function PracticePage() {
     return Math.round((correct / exercises.length) * 100);
   };
 
-  if (loading) {
+  if (!path || isLoading) {
     return (
-      <div className="flex items-center justify-center min-h-[400px]">
-        <Loading text="Chargement des exercices..." />
+      <div className="max-w-2xl mx-auto space-y-6">
+        <PageSkeleton cards={3} />
       </div>
     );
   }

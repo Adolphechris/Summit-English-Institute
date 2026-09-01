@@ -1,12 +1,11 @@
 'use client';
 
-import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { ProgressBar } from '@/components/ui/ProgressBar';
 import { Badge } from '@/components/ui/Badge';
 import { Button } from '@/components/ui/Button';
-import { Loading } from '@/components/ui/Loading';
-import { apiFetch } from '@/lib/apiClient';
+import { PageSkeleton } from '@/components/ui/Skeleton';
+import { useApi } from '@/lib/useApi';
 import type { DashboardData, DomainProgress, RecentResult } from '@/types';
 
 /* ── Mini composants ── */
@@ -51,11 +50,11 @@ const PROGRAM_LEVELS = [
 
 /* ── Page principale ── */
 export default function DashboardPage() {
-  const [data, setData] = useState<DashboardData | null>(null);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState('');
-  const [userName, setUserName] = useState('');
-  const [streak, setStreak] = useState(1);
+  // Données mises en cache (stale-while-revalidate) : navigation instantanée
+  const { data: me } = useApi<{ user: { email: string; firstName?: string } }>('/api/auth/me');
+  const { data, error, isLoading, refresh } = useApi<DashboardData>('/api/dashboard');
+
+  const userName = me?.user?.firstName || me?.user?.email?.split('@')[0] || '';
 
   const hour = new Date().getHours();
   const greeting = hour < 12 ? 'Bonjour' : hour < 18 ? 'Bon après-midi' : 'Bonsoir';
@@ -63,25 +62,10 @@ export default function DashboardPage() {
   const dayOfWeek = ['Dimanche', 'Lundi', 'Mardi', 'Mercredi', 'Jeudi', 'Vendredi', 'Samedi'][new Date().getDay()];
   const dateStr = new Date().toLocaleDateString('fr-FR', { day: 'numeric', month: 'long', year: 'numeric' });
 
-  useEffect(() => {
-    apiFetch<{ user: { email: string; firstName?: string } }>('/api/auth/me')
-      .then((d) => setUserName(d.user.firstName || d.user.email.split('@')[0]))
-      .catch(() => {});
-
-    apiFetch<DashboardData>('/api/dashboard')
-      .then((d) => {
-        setData(d);
-        // Simuler streak depuis currentDay
-        setStreak(Math.max(1, d.currentDay ?? 1));
-      })
-      .catch((err) => setError(err.message))
-      .finally(() => setLoading(false));
-  }, []);
-
-  if (loading) {
+  if (isLoading) {
     return (
-      <div className="flex items-center justify-center min-h-[400px]">
-        <Loading text="Chargement de votre espace…" />
+      <div className="space-y-6">
+        <PageSkeleton cards={3} />
       </div>
     );
   }
@@ -92,7 +76,7 @@ export default function DashboardPage() {
         <div className="bg-red-50 border border-red-200 rounded-2xl p-8 text-center">
           <div className="text-4xl mb-3">⚠️</div>
           <p className="text-red-800 font-medium">{error || 'Impossible de charger le tableau de bord'}</p>
-          <Button className="mt-4" onClick={() => window.location.reload()}>Réessayer</Button>
+          <Button className="mt-4" onClick={refresh}>Réessayer</Button>
         </div>
       </div>
     );
@@ -120,9 +104,9 @@ export default function DashboardPage() {
                   <span className="w-2 h-2 bg-green-400 rounded-full animate-pulse" />
                   {dayOfWeek} {dateStr}
                 </div>
-                {streak > 1 && (
+                {data.streak > 1 && (
                   <div className="inline-flex items-center gap-1.5 bg-orange-400/30 border border-orange-300/40 rounded-full px-3 py-1 text-xs font-bold">
-                    🔥 {streak} jours de suite
+                    🔥 {data.streak} jours de suite
                   </div>
                 )}
               </div>
@@ -238,36 +222,56 @@ export default function DashboardPage() {
         </div>
       )}
 
-      {/* ── STATS PLATEFORME ── */}
-      <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
-        <StatCard value="80" label="Leçons IT" icon="📖" color="bg-blue-600" />
-        <StatCard value="920" label="Questions QCM" icon="❓" color="bg-indigo-600" />
-        <StatCard value="320" label="Exercices pratiques" icon="🛠️" color="bg-violet-600" />
-        <StatCard value="41" label="Compétences IT" icon="🎓" color="bg-purple-600" />
-      </div>
+      {/* ── AUJOURD'HUI : objectif du jour, révisions, série ── */}
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
+        <div className="rounded-2xl p-5 bg-white border-2 border-blue-100 shadow-sm flex flex-col">
+          <p className="text-xs font-bold text-blue-700 uppercase tracking-wide mb-2">🎯 Objectif du jour</p>
+          <p className="text-2xl font-black text-slate-900">Jour {data.currentDay} / {data.maxDays}</p>
+          <p className="text-sm text-slate-500 mt-1 flex-1">
+            {data.todayAttempts > 0
+              ? `${data.todayAttempts} QCM travaillé${data.todayAttempts > 1 ? 's' : ''} aujourd'hui`
+              : 'Aucune activité aujourd\u2019hui — 15 minutes suffisent !'}
+          </p>
+          <Link href="/course" className="inline-block mt-3 text-sm font-semibold text-blue-600 hover:underline">
+            Continuer le parcours →
+          </Link>
+        </div>
 
-      {/* ── ACCÈS RAPIDE ── */}
-      <div>
-        <h2 className="text-xl font-bold text-slate-900 mb-4">⚡ Accès rapide</h2>
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-          <QuickCard href="/diagnostic" icon="🎯" title="Test Diagnostique" desc="Évalue ton niveau et obtiens un plan personnalisé" highlight={isNewStudent} />
-          <QuickCard href="/course" icon="🗺️" title="Parcours 20 Jours" desc="Programme structuré jour par jour" highlight={!isNewStudent && data.overallProgress < 80} />
-          <QuickCard href="/lessons" icon="📖" title="80 Leçons IT" desc="Bibliothèque complète avec vocabulaire spécialisé" />
-          <QuickCard href="/practice" icon="🛠️" title="Pratique & Lab" desc="Exercices interactifs : dialogue, rédaction, écoute" />
-          <QuickCard
-            href="/review"
-            icon="🔄"
-            title="Révisions SRS"
-            desc="Mémorisation à long terme par répétition espacée"
-            badge={data.reviewCount > 0 ? `${data.reviewCount} à réviser` : undefined}
-          />
-          <QuickCard href="/assessments" icon="📝" title="Quiz & Tests" desc="Mini-tests par niveau et par thème" />
-          <QuickCard href="/progress" icon="📊" title="Statistiques" desc="Suivi détaillé de tes performances par domaine" />
-          <QuickCard href="/final-assessment" icon="🏆" title="Examen Final" desc="Validation globale pour la certification" />
-          <QuickCard href="/certificate" icon="🎓" title="Mon Certificat" desc="Télécharge ton diplôme de completion" />
-          <QuickCard href="/profile" icon="👤" title="Mon Profil" desc="Paramètres du compte et préférences" />
-          <QuickCard href="/resources" icon="📚" title="Ressources" desc="PDF, fiches mémo, guides et supports audio" />
-          <QuickCard href="/support" icon="💬" title="Aide & Support" desc="FAQ, tutoriels et contact pédagogique" />
+        <div className="rounded-2xl p-5 bg-white border-2 border-orange-100 shadow-sm flex flex-col">
+          <p className="text-xs font-bold text-orange-600 uppercase tracking-wide mb-2">🔄 Révisions SRS</p>
+          {data.reviewCount > 0 ? (
+            <>
+              <p className="text-2xl font-black text-slate-900">{data.reviewCount} à réviser</p>
+              <p className="text-sm text-slate-500 mt-1 flex-1">Mémorisation à long terme — ne les laisse pas s&apos;accumuler.</p>
+            </>
+          ) : (
+            <>
+              <p className="text-2xl font-black text-slate-900">Rien à réviser 🎉</p>
+              <p className="text-sm text-slate-500 mt-1 flex-1">Ta mémoire est à jour. Reviens après tes prochaines leçons.</p>
+            </>
+          )}
+          <Link href="/review" className="inline-block mt-3 text-sm font-semibold text-orange-600 hover:underline">
+            Ouvrir les révisions →
+          </Link>
+        </div>
+
+        <div className="rounded-2xl p-5 bg-white border-2 border-indigo-100 shadow-sm">
+          <p className="text-xs font-bold text-indigo-600 uppercase tracking-wide mb-3">
+            🔥 Série : {data.streak} jour{data.streak > 1 ? 's' : ''}
+          </p>
+          <div className="flex items-end justify-between gap-1.5 h-16">
+            {(data.weekActivity || []).map((d) => (
+              <div key={d.date} className="flex flex-col items-center gap-1 flex-1 h-full justify-end">
+                <div
+                  className="w-full rounded-t-md bg-indigo-500"
+                  style={{ height: `${Math.max(10, Math.min(100, d.count * 30))}%`, opacity: d.count > 0 ? 1 : 0.2 }}
+                  title={`${d.count} activité(s)`}
+                />
+                <span className="text-[10px] text-slate-400">{d.label}</span>
+              </div>
+            ))}
+          </div>
+          <p className="text-xs text-slate-400 mt-2">Activité des 7 derniers jours</p>
         </div>
       </div>
 
@@ -358,7 +362,7 @@ export default function DashboardPage() {
                     href={`/review?skill=${area.skillId}`}
                     className="flex items-center justify-between py-2.5 px-3 rounded-xl hover:bg-orange-50 transition-colors group"
                   >
-                    <span className="text-sm text-slate-700 group-hover:text-orange-800">{area.skillId}</span>
+                    <span className="text-sm text-slate-700 group-hover:text-orange-800">{String((area as unknown as Record<string, unknown>).skillName ?? area.skillId)}</span>
                     <span className="text-sm font-bold text-orange-600">{area.masteryScore}%</span>
                   </Link>
                 ))}

@@ -1,12 +1,11 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useApi } from '@/lib/useApi';
 import Link from 'next/link';
 import { Card } from '@/components/ui/Card';
 import { Button } from '@/components/ui/Button';
 import { Badge } from '@/components/ui/Badge';
-import { Loading } from '@/components/ui/Loading';
-import { apiFetch } from '@/lib/apiClient';
+import { PageSkeleton } from '@/components/ui/Skeleton';
 
 interface Lesson {
   id: number;
@@ -18,22 +17,13 @@ interface Lesson {
 }
 
 export default function LessonsPage() {
-  const [lessons, setLessons] = useState<Lesson[]>([]);
-  const [loading, setLoading] = useState(true);
+  const { data, isLoading } = useApi<{ lessons: Lesson[] }>('/api/lessons?limit=50');
+  const lessons = data?.lessons || [];
 
-  useEffect(() => {
-    apiFetch<{ lessons: Lesson[] }>('/api/lessons?limit=50')
-      .then((data) => {
-        setLessons(data.lessons || []);
-        setLoading(false);
-      })
-      .catch(() => setLoading(false));
-  }, []);
-
-  if (loading) {
+  if (isLoading) {
     return (
-      <div className="flex items-center justify-center min-h-[400px]">
-        <Loading text="Chargement des leçons..." />
+      <div className="max-w-4xl mx-auto space-y-6">
+        <PageSkeleton cards={3} />
       </div>
     );
   }

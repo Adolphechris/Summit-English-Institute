@@ -1,5 +1,6 @@
-import type { Metadata } from 'next';
+import type { Metadata, Viewport } from 'next';
 import './globals.css';
+import { PwaRegister } from '@/components/PwaRegister';
 
 export const metadata: Metadata = {
   metadataBase: new URL('https://english.iumorave-ac.org'),
@@ -50,6 +51,18 @@ export const metadata: Metadata = {
   alternates: {
     canonical: 'https://english.iumorave-ac.org',
   },
+  manifest: '/manifest.webmanifest',
+  icons: {
+    icon: [
+      { url: '/icons/icon-192.png', sizes: '192x192', type: 'image/png' },
+      { url: '/icons/icon-512.png', sizes: '512x512', type: 'image/png' },
+    ],
+    apple: '/icons/apple-touch-icon.png',
+  },
+};
+
+export const viewport: Viewport = {
+  themeColor: '#1d4ed8',
 };
 
 export default function RootLayout({
@@ -79,7 +92,10 @@ export default function RootLayout({
           dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
         />
       </head>
-      <body>{children}</body>
+      <body>
+        {children}
+        <PwaRegister />
+      </body>
     </html>
   );
 }

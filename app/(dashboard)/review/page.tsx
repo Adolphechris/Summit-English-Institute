@@ -1,12 +1,12 @@
 'use client';
 
-import { useEffect, useState } from 'react';
-import { useRouter } from 'next/navigation';
+import { useState } from 'react';
+import { useApi } from '@/lib/useApi';
 import Link from 'next/link';
 import { Card } from '@/components/ui/Card';
 import { Button } from '@/components/ui/Button';
 import { Badge } from '@/components/ui/Badge';
-import { Loading } from '@/components/ui/Loading';
+import { PageSkeleton } from '@/components/ui/Skeleton';
 import { apiFetch } from '@/lib/apiClient';
 
 interface ReviewItem {
@@ -29,9 +29,8 @@ interface QuestionItem {
 }
 
 export default function ReviewPage() {
-  const router = useRouter();
-  const [items, setItems] = useState<ReviewItem[]>([]);
-  const [loading, setLoading] = useState(true);
+  const { data, isLoading, mutate } = useApi<{ items: ReviewItem[] }>('/api/review');
+  const items = data?.items || [];
   const [activeTab, setActiveTab] = useState<'due' | 'weak' | 'mistakes'>('due');
   const [sessionActive, setSessionActive] = useState(false);
   const [sessionQuestions, setSessionQuestions] = useState<QuestionItem[]>([]);
@@ -40,21 +39,10 @@ export default function ReviewPage() {
   const [isAnswered, setIsAnswered] = useState(false);
   const [sessionScore, setSessionScore] = useState(0);
 
-  useEffect(() => {
-    apiFetch<{ items: ReviewItem[] }>('/api/review')
-      .then((data) => {
-        setItems(data.items || []);
-        setLoading(false);
-      })
-      .catch(() => {
-        router.push('/login');
-      });
-  }, [router]);
-
-  if (loading) {
+  if (isLoading) {
     return (
-      <div className="flex items-center justify-center min-h-[400px]">
-        <Loading text="Chargement des révisions SRS..." />
+      <div className="max-w-4xl mx-auto space-y-6 p-4">
+        <PageSkeleton cards={3} />
       </div>
     );
   }
@@ -65,7 +53,7 @@ export default function ReviewPage() {
         method: 'POST',
         body: JSON.stringify({ reviewItemId: itemId }),
       });
-      setItems((prev) => prev.filter((i) => i.id !== itemId));
+      mutate((cur) => ({ items: (cur?.items || []).filter((i) => i.id !== itemId) }));
     } catch {
       // silencieux
     }
@@ -73,7 +61,6 @@ export default function ReviewPage() {
 
   const startQuickSession = async () => {
     try {
-      setLoading(true);
       const res = await apiFetch<{ questions: QuestionItem[] }>('/api/questions?limit=10');
       if (res.questions && res.questions.length > 0) {
         setSessionQuestions(res.questions);
@@ -85,8 +72,6 @@ export default function ReviewPage() {
       }
     } catch {
       // fallback
-    } finally {
-      setLoading(false);
     }
   };
 

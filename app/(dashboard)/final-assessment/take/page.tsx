@@ -1,13 +1,13 @@
 'use client';
 
-import { useEffect, useState } from 'react';
-import { useRouter } from 'next/navigation';
+import { useState } from 'react';
+import { useApi } from '@/lib/useApi';
 import Link from 'next/link';
 import { Card } from '@/components/ui/Card';
 import { Button } from '@/components/ui/Button';
 import { Badge } from '@/components/ui/Badge';
 import { ProgressBar } from '@/components/ui/ProgressBar';
-import { Loading } from '@/components/ui/Loading';
+import { PageSkeleton } from '@/components/ui/Skeleton';
 import { apiFetch } from '@/lib/apiClient';
 import { APP_CONFIG } from '@/lib/constants';
 
@@ -21,29 +21,12 @@ interface Question {
 }
 
 export default function TakeFinalAssessmentPage() {
-  const router = useRouter();
-  const [questions, setQuestions] = useState<Question[]>([]);
+  const { data, isLoading } = useApi<{ questions: Question[]; assessmentId: number }>('/api/final-assessment/questions');
+  const questions = data?.questions || [];
   const [currentIndex, setCurrentIndex] = useState(0);
   const [answers, setAnswers] = useState<Map<number, string>>(new Map());
-  const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
   const [result, setResult] = useState<{ score: number; passed: boolean; certificateId?: string } | null>(null);
-
-  useEffect(() => {
-    // Charger les questions de l'évaluation finale cumulative
-    apiFetch<{ questions: Question[]; assessmentId: number }>('/api/final-assessment/questions')
-      .then((data) => {
-        if (!data.questions || data.questions.length === 0) {
-          throw new Error('No questions');
-        }
-        setQuestions(data.questions);
-        setLoading(false);
-      })
-      .catch((error) => {
-        console.error('[FINAL ASSESSMENT LOAD ERROR]', error);
-        router.push('/dashboard');
-      });
-  }, [router]);
 
   const handleAnswer = (questionId: number, answer: string) => {
     setAnswers((prev) => new Map(prev).set(questionId, answer));
@@ -76,10 +59,24 @@ export default function TakeFinalAssessmentPage() {
     }
   };
 
-  if (loading) {
+  if (isLoading) {
     return (
-      <div className="flex items-center justify-center min-h-[400px]">
-        <Loading text="Chargement de l'évaluation finale..." />
+      <div className="max-w-2xl mx-auto">
+        <PageSkeleton cards={1} />
+      </div>
+    );
+  }
+
+  if (questions.length === 0) {
+    return (
+      <div className="max-w-2xl mx-auto">
+        <Card className="p-8 text-center">
+          <div className="text-4xl mb-3">🔒</div>
+          <p className="text-slate-600">Aucune question disponible pour l&apos;évaluation finale. Complète d&apos;abord tes modules.</p>
+          <Link href="/dashboard" className="mt-4 inline-block">
+            <Button variant="secondary">Retour au tableau de bord</Button>
+          </Link>
+        </Card>
       </div>
     );
   }

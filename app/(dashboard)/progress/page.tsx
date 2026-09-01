@@ -1,14 +1,12 @@
 'use client';
 
-import { useEffect, useState } from 'react';
-import { useRouter } from 'next/navigation';
+import { useApi } from '@/lib/useApi';
 import Link from 'next/link';
 import { Card } from '@/components/ui/Card';
 import { Button } from '@/components/ui/Button';
 import { Badge } from '@/components/ui/Badge';
 import { ProgressBar } from '@/components/ui/ProgressBar';
-import { Loading } from '@/components/ui/Loading';
-import { apiFetch } from '@/lib/apiClient';
+import { PageSkeleton } from '@/components/ui/Skeleton';
 import type { DomainProgress } from '@/types';
 
 interface SkillProgressItem {
@@ -20,47 +18,25 @@ interface SkillProgressItem {
 }
 
 export default function ProgressPage() {
-  const router = useRouter();
-  const [loading, setLoading] = useState(true);
-  const [domainProgress, setDomainProgress] = useState<DomainProgress[]>([]);
-  const [skills, setSkills] = useState<SkillProgressItem[]>([]);
-  const [overallMastery, setOverallMastery] = useState(0);
+  const { data: progressData, isLoading: loadingProgress } = useApi<{ domainProgress: DomainProgress[] }>('/api/progress');
+  const { data: skillsData, isLoading: loadingSkills } = useApi<{ skills: any[] }>('/api/skills');
 
-  useEffect(() => {
-    Promise.all([
-      apiFetch<{ domainProgress: DomainProgress[] }>('/api/progress'),
-      apiFetch<{ skills: any[] }>('/api/skills').catch(() => ({ skills: [] })),
-    ])
-      .then(([progressData, skillsData]) => {
-        const dp = progressData.domainProgress || [];
-        setDomainProgress(dp);
+  const domainProgress = progressData?.domainProgress || [];
+  const skills: SkillProgressItem[] = (skillsData?.skills || []).map((s: any, idx: number) => ({
+    id: s.id,
+    name: s.name,
+    domain: s.domain || 'general',
+    level: s.levelId || Math.floor(idx / 5) + 1,
+    masteryScore: Math.min(100, Math.round(55 + (idx % 7) * 6.5)),
+  }));
+  const overallMastery = domainProgress.length > 0
+    ? Math.round(domainProgress.reduce((acc, d) => acc + (d.progress || 0), 0) / domainProgress.length)
+    : 68;
 
-        // Map skills progress
-        const loadedSkills: SkillProgressItem[] = (skillsData.skills || []).map((s, idx) => ({
-          id: s.id,
-          name: s.name,
-          domain: s.domain || 'general',
-          level: s.levelId || Math.floor(idx / 5) + 1,
-          masteryScore: Math.min(100, Math.round(55 + (idx % 7) * 6.5)),
-        }));
-        setSkills(loadedSkills);
-
-        // Overall mastery index
-        const avg = dp.length > 0
-          ? Math.round(dp.reduce((acc, d) => acc + (d.progress || 0), 0) / dp.length)
-          : 68;
-        setOverallMastery(avg);
-        setLoading(false);
-      })
-      .catch(() => {
-        router.push('/login');
-      });
-  }, [router]);
-
-  if (loading) {
+  if (loadingProgress || loadingSkills) {
     return (
-      <div className="flex items-center justify-center min-h-[400px]">
-        <Loading text="Calcul de l'Indice de Maîtrise..." />
+      <div className="max-w-4xl mx-auto space-y-6">
+        <PageSkeleton cards={3} />
       </div>
     );
   }

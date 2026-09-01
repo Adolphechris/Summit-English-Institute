@@ -1,0 +1,19 @@
+Phase A UX : cache SWR-like + skeletons + dashboard réel + PWA
+
+- lib/useApi.ts : hook de cache stale-while-revalidate maison (0 dépendance),
+  revalidation arrière-plan, refresh() et mutate() optimiste
+- components/ui/Skeleton.tsx : Skeleton / SkeletonCard / PageSkeleton
+- 13 pages portail migrées vers useApi : plus aucun spinner plein écran,
+  paint instantané depuis le cache, skeletons au premier chargement
+- Dashboard : section AUJOURD'HUI (objectif du jour x/20, révisions SRS,
+  série + activité 7 jours) en vraies données (streak, weekActivity,
+  todayAttempts calculés côté /api/dashboard) ; suppression des blocs
+  STATS PLATEFORME et ACCÈS RAPIDE (duplicata de la sidebar)
+- review : suppression optimiste des items maîtrisés via mutate()
+- PWA : manifest.webmanifest, icônes 192/512/maskable/apple, sw.js
+  (cache-first assets, network-first pages, jamais /api), PwaRegister
+  (prod uniquement), metadata manifest + themeColor dans app/layout.tsx
+- Nettoyage : imports morts, redirects /login superflus (le middleware
+  gère l'auth), nom de compétence lisible dans les points faibles
+
+Validation : tsc 0 erreur, eslint 0 warning, 97/97 tests, next build OK

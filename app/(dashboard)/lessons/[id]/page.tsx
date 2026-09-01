@@ -1,37 +1,23 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useApi } from '@/lib/useApi';
 import { useParams } from 'next/navigation';
 import Link from 'next/link';
 import { Card } from '@/components/ui/Card';
 import { Button } from '@/components/ui/Button';
 import { Badge } from '@/components/ui/Badge';
-import { Loading } from '@/components/ui/Loading';
-import { apiFetch } from '@/lib/apiClient';
+import { PageSkeleton } from '@/components/ui/Skeleton';
 import type { Lesson } from '@/types';
 
 export default function LessonPage() {
   const params = useParams();
-  const [lesson, setLesson] = useState<Lesson | null>(null);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState('');
+  const { data, error, isLoading } = useApi<{ lesson: Lesson }>(`/api/lessons/${params.id}`);
+  const lesson = data?.lesson ?? null;
 
-  useEffect(() => {
-    apiFetch<{ lesson: Lesson }>(`/api/lessons/${params.id}`)
-      .then((data) => {
-        setLesson(data.lesson);
-        setLoading(false);
-      })
-      .catch((err) => {
-        setError(err.message);
-        setLoading(false);
-      });
-  }, [params.id]);
-
-  if (loading) {
+  if (isLoading) {
     return (
-      <div className="flex items-center justify-center min-h-[400px]">
-        <Loading text="Chargement de la leçon..." />
+      <div className="max-w-2xl mx-auto">
+        <PageSkeleton cards={1} />
       </div>
     );
   }

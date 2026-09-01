@@ -1,13 +1,14 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 import { useParams } from 'next/navigation';
 import Link from 'next/link';
 import { Card } from '@/components/ui/Card';
 import { Button } from '@/components/ui/Button';
 import { Badge } from '@/components/ui/Badge';
 import { ProgressBar } from '@/components/ui/ProgressBar';
-import { Loading } from '@/components/ui/Loading';
+import { PageSkeleton } from '@/components/ui/Skeleton';
+import { useApi } from '@/lib/useApi';
 import { ErrorMessage } from '@/components/ui/ErrorMessage';
 import { apiFetch } from '@/lib/apiClient';
 
@@ -39,31 +40,16 @@ export default function AssessmentPage() {
   const params = useParams();
   const assessmentId = parseInt(String(params.id), 10);
 
-  const [assessment, setAssessment] = useState<AssessmentDetail | null>(null);
-  const [questions, setQuestions] = useState<AssessmentQuestion[]>([]);
+  const { data, error: loadError, isLoading } = useApi<{ assessment: AssessmentDetail; questions: AssessmentQuestion[] }>(
+    assessmentId ? `/api/assessments/${assessmentId}` : null
+  );
+  const assessment = data?.assessment ?? null;
+  const questions = data?.questions || [];
   const [currentIndex, setCurrentIndex] = useState(0);
   const [answers, setAnswers] = useState<Map<number, string>>(new Map());
-  const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [submitting, setSubmitting] = useState(false);
   const [result, setResult] = useState<SubmissionResult | null>(null);
-
-  useEffect(() => {
-    if (!assessmentId) return;
-
-    apiFetch<{ assessment: AssessmentDetail; questions: AssessmentQuestion[] }>(
-      `/api/assessments/${assessmentId}`
-    )
-      .then((data) => {
-        setAssessment(data.assessment);
-        setQuestions(data.questions || []);
-        setLoading(false);
-      })
-      .catch((err) => {
-        setError(err.message);
-        setLoading(false);
-      });
-  }, [assessmentId]);
 
   const handleAnswer = (questionId: number, answer: string) => {
     setAnswers((prev) => new Map(prev).set(questionId, answer));
@@ -93,19 +79,19 @@ export default function AssessmentPage() {
     }
   };
 
-  if (loading) {
+  if (isLoading) {
     return (
-      <div className="flex items-center justify-center min-h-[400px]">
-        <Loading text="Chargement de l'évaluation..." />
+      <div className="max-w-2xl mx-auto">
+        <PageSkeleton cards={1} />
       </div>
     );
   }
 
-  if (error || (!assessment && questions.length === 0)) {
+  if (loadError || (!assessment && questions.length === 0)) {
     return (
       <div className="max-w-2xl mx-auto">
         <Card className="p-6">
-          <ErrorMessage message={error || 'Évaluation introuvable'} onRetry={() => window.location.reload()} />
+          <ErrorMessage message={loadError || error || 'Évaluation introuvable'} onRetry={() => window.location.reload()} />
           <div className="mt-4">
             <Link href="/assessments">
               <Button variant="secondary">Retour aux évaluations</Button>

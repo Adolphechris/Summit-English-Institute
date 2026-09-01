@@ -433,6 +433,18 @@ export interface DashboardData {
   strongAreas: SkillProgress[];
   recentResults: RecentResult[];
   domainProgress: DomainProgress[];
+  /** Série de jours consécutifs avec activité (calculée depuis les tentatives réelles) */
+  streak: number;
+  /** Activité des 7 derniers jours (nombre de tentatives par jour) */
+  weekActivity: WeekActivityDay[];
+  /** Tentatives effectuées aujourd'hui */
+  todayAttempts: number;
+}
+
+export interface WeekActivityDay {
+  date: string;
+  label: string;
+  count: number;
 }
 
 export interface ContinueLearningCard {

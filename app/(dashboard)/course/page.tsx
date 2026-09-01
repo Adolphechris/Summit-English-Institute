@@ -1,35 +1,21 @@
 'use client';
 
-import { useEffect, useState } from 'react';
 import Link from 'next/link';
+import { useApi } from '@/lib/useApi';
 import { Card } from '@/components/ui/Card';
 import { Badge } from '@/components/ui/Badge';
 import { ProgressBar } from '@/components/ui/ProgressBar';
-import { Loading } from '@/components/ui/Loading';
-import { apiFetch } from '@/lib/apiClient';
+import { PageSkeleton } from '@/components/ui/Skeleton';
 import type { CoursePathDay } from '@/types';
 
 export default function CoursePage() {
-  const [days, setDays] = useState<CoursePathDay[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState('');
+  const { data, error, isLoading } = useApi<{ days: CoursePathDay[] }>('/api/course/path');
+  const days = data?.days || [];
 
-  useEffect(() => {
-    apiFetch<{ days: CoursePathDay[] }>('/api/course/path')
-      .then((data) => {
-        setDays(data.days);
-        setLoading(false);
-      })
-      .catch((err) => {
-        setError(err.message);
-        setLoading(false);
-      });
-  }, []);
-
-  if (loading) {
+  if (isLoading) {
     return (
-      <div className="flex items-center justify-center min-h-[400px]">
-        <Loading text="Chargement du parcours..." />
+      <div className="space-y-6">
+        <PageSkeleton cards={3} />
       </div>
     );
   }

@@ -1,13 +1,13 @@
 'use client';
 
-import { useEffect, useState } from 'react';
-import { useRouter } from 'next/navigation';
+import { useState } from 'react';
 import Link from 'next/link';
 import { Card } from '@/components/ui/Card';
 import { Button } from '@/components/ui/Button';
 import { Badge } from '@/components/ui/Badge';
 import { ProgressBar } from '@/components/ui/ProgressBar';
-import { Loading } from '@/components/ui/Loading';
+import { PageSkeleton } from '@/components/ui/Skeleton';
+import { useApi } from '@/lib/useApi';
 import { apiFetch } from '@/lib/apiClient';
 
 interface DiagnosticResult {
@@ -19,25 +19,13 @@ interface DiagnosticResult {
 }
 
 export default function DiagnosticPage() {
-  const router = useRouter();
-  const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
   const [result, setResult] = useState<DiagnosticResult | null>(null);
   const [answers, setAnswers] = useState<Map<number, string>>(new Map());
-  const [questions, setQuestions] = useState<any[]>([]);
   const [currentIndex, setCurrentIndex] = useState(0);
 
-  useEffect(() => {
-    // Charger les questions de diagnostic
-    apiFetch<{ questions: any[] }>('/api/diagnostic/questions')
-      .then((data) => {
-        setQuestions(data.questions || []);
-        setLoading(false);
-      })
-      .catch(() => {
-        router.push('/dashboard');
-      });
-  }, [router]);
+  const { data, isLoading } = useApi<{ questions: any[] }>('/api/diagnostic/questions');
+  const questions = data?.questions || [];
 
   const handleAnswer = (questionId: number, answer: string) => {
     setAnswers((prev) => new Map(prev).set(questionId, answer));
@@ -66,10 +54,10 @@ export default function DiagnosticPage() {
     }
   };
 
-  if (loading) {
+  if (isLoading) {
     return (
-      <div className="flex items-center justify-center min-h-[400px]">
-        <Loading text="Chargement du diagnostic..." />
+      <div className="max-w-4xl mx-auto space-y-6">
+        <PageSkeleton cards={3} />
       </div>
     );
   }

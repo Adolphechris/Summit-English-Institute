@@ -7,36 +7,34 @@ import { Card } from '@/components/ui/Card';
 import { Button } from '@/components/ui/Button';
 import { Badge } from '@/components/ui/Badge';
 import { Input } from '@/components/ui/Input';
-import { Loading } from '@/components/ui/Loading';
+import { PageSkeleton } from '@/components/ui/Skeleton';
+import { useApi } from '@/lib/useApi';
 import { apiFetch } from '@/lib/apiClient';
 
 export default function ProfilePage() {
   const router = useRouter();
-  const [user, setUser] = useState<{ email: string; firstName?: string; lastName?: string; role: string } | null>(null);
-  const [loading, setLoading] = useState(true);
+  const { data, isLoading, mutate } = useApi<{ user: { email: string; firstName?: string; lastName?: string; role: string } }>('/api/auth/me');
+  const user = data?.user ?? null;
 
   // Form states
   const [firstName, setFirstName] = useState('');
   const [lastName, setLastName] = useState('');
   const [currentPassword, setCurrentPassword] = useState('');
   const [newPassword, setNewPassword] = useState('');
-  
+
   const [savingProfile, setSavingProfile] = useState(false);
   const [savingPassword, setSavingPassword] = useState(false);
   const [message, setMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
 
+  // Pré-remplir le formulaire une seule fois, quand les données arrivent
   useEffect(() => {
-    apiFetch<{ user: { email: string; firstName?: string; lastName?: string; role: string } }>('/api/auth/me')
-      .then((data) => {
-        setUser(data.user);
-        setFirstName(data.user.firstName || '');
-        setLastName(data.user.lastName || '');
-        setLoading(false);
-      })
-      .catch(() => {
-        router.push('/login');
-      });
-  }, [router]);
+    if (user && firstName === '' && lastName === '') {
+      setFirstName(user.firstName || '');
+      setLastName(user.lastName || '');
+    }
+    // Dépendances volontairement limitées : on ne veut PAS écraser la saisie en cours
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [user]);
 
   const handleUpdateProfile = async (e: FormEvent) => {
     e.preventDefault();
@@ -48,7 +46,7 @@ export default function ProfilePage() {
         method: 'PUT',
         body: JSON.stringify({ firstName, lastName }),
       });
-      setUser(data.user);
+      mutate((cur) => ({ user: data.user || cur?.user }));
       setMessage({ type: 'success', text: 'Informations personnelles mises à jour !' });
     } catch (err: any) {
       setMessage({ type: 'error', text: err.message || 'Erreur lors de la mise à jour.' });
@@ -83,10 +81,10 @@ export default function ProfilePage() {
     router.refresh();
   };
 
-  if (loading) {
+  if (isLoading) {
     return (
-      <div className="flex items-center justify-center min-h-[400px]">
-        <Loading text="Chargement du profil..." />
+      <div className="max-w-4xl mx-auto space-y-6">
+        <PageSkeleton cards={3} />
       </div>
     );
   }

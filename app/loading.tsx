@@ -1,9 +1,9 @@
-import { Loading } from '@/components/ui/Loading';
+import { PageSkeleton } from '@/components/ui/Skeleton';
 
 export default function RootLoading() {
   return (
-    <div className="min-h-screen flex items-center justify-center">
-      <Loading text="Chargement..." size="lg" />
+    <div className="min-h-screen max-w-7xl mx-auto px-4 sm:px-6 py-10">
+      <PageSkeleton cards={3} />
     </div>
   );
 }

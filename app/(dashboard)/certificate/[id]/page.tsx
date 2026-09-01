@@ -1,13 +1,12 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useApi } from '@/lib/useApi';
 import { useParams } from 'next/navigation';
 import Link from 'next/link';
 import { Card } from '@/components/ui/Card';
 import { Button } from '@/components/ui/Button';
 import { Badge } from '@/components/ui/Badge';
-import { Loading } from '@/components/ui/Loading';
-import { apiFetch } from '@/lib/apiClient';
+import { PageSkeleton } from '@/components/ui/Skeleton';
 
 interface CertificateData {
   certificateCode: string;
@@ -19,20 +18,12 @@ interface CertificateData {
 
 export default function CertificatePage() {
   const params = useParams();
-  const [certificate, setCertificate] = useState<CertificateData | null>(null);
-  const [loading, setLoading] = useState(true);
+  const { data: certificate, isLoading } = useApi<CertificateData>(`/api/certificate/${params.id}`);
 
-  useEffect(() => {
-    apiFetch<CertificateData>(`/api/certificate/${params.id}`)
-      .then(setCertificate)
-      .catch(() => setCertificate(null))
-      .finally(() => setLoading(false));
-  }, [params.id]);
-
-  if (loading) {
+  if (isLoading) {
     return (
-      <div className="flex items-center justify-center min-h-[400px]">
-        <Loading text="Chargement du certificat..." />
+      <div className="max-w-2xl mx-auto">
+        <PageSkeleton cards={1} />
       </div>
     );
   }
