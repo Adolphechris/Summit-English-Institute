@@ -20,7 +20,10 @@ Stack : **Next.js (App Router) sur Vercel + Cloud Firestore + Gemini AI (optionn
 ## 3. Recette finale ZERO CONFUSION (T-1204)
 Parcourir en tant qu'apprenant réel et vérifier : **Où suis-je ? / Que dois-je faire ? / Pourquoi ? / Score ? / Révision ? / Suite ?**
 - Inscription → Diagnostic → Lesson 101 → Practice → Review (SRS) → Assessment N1 → Progress → Certificate
-- Comptes de test fournis dans le seed (voir README) ; vérifier aussi la nav sans spinner et l'auto-redirect accueil→dashboard.
+- Comptes de test en production (créés le 2026-09-01, vérifiés par login API) :
+  - `student@summit.edu` / `Student2026!` (rôle student)
+  - `admin@summit.edu` / `Admin2026!` (rôle admin)
+  - Comptes seed legacy `*@summit-english.com` et `*@summit-english.local` également actifs (voir `database/firestore-seed-data.json`) ; vérifier aussi la nav sans spinner et l'auto-redirect accueil→dashboard.
 
 ## 4. Maintenance (T-1205)
 - `scripts/backup.sh` : dump/sauvegarde planifiée (cron recommandé)
