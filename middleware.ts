@@ -29,6 +29,8 @@ export const config = {
     '/diagnostic/:path*',
     '/final-assessment/:path*',
     '/certificate/:path*',
+    '/resources/:path*',
+    '/support/:path*',
     '/admin/:path*',
   ],
 };

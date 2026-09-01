@@ -72,10 +72,9 @@ export default function PracticePage() {
     return (
       <div className="max-w-2xl mx-auto">
         <Card className="p-8 text-center">
+          <div className="text-4xl mb-3">🛠️</div>
           <p className="text-slate-600">Aucun exercice disponible pour le moment.</p>
-          <Link href="/dashboard">
-            <Button className="mt-4">Retour au dashboard</Button>
-          </Link>
+          <p className="text-sm text-slate-400 mt-2">Les exercices seront disponibles au fur et à mesure de ta progression.</p>
         </Card>
       </div>
     );

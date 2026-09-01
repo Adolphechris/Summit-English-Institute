@@ -7,25 +7,6 @@ import { apiFetch, clearToken } from '@/lib/apiClient';
 
 type UserInfo = { email: string; firstName?: string; lastName?: string; role?: string };
 
-const USER_CACHE_KEY = 'sei_user_cache';
-
-function getCachedUser(): UserInfo | null {
-  try {
-    const raw = typeof window !== 'undefined' ? localStorage.getItem(USER_CACHE_KEY) : null;
-    return raw ? (JSON.parse(raw) as UserInfo) : null;
-  } catch {
-    return null;
-  }
-}
-
-function setCachedUser(u: UserInfo) {
-  try { localStorage.setItem(USER_CACHE_KEY, JSON.stringify(u)); } catch { /* ok */ }
-}
-
-function clearCachedUser() {
-  try { localStorage.removeItem(USER_CACHE_KEY); } catch { /* ok */ }
-}
-
 const navSections = [
   {
     title: 'Accueil',
@@ -65,53 +46,34 @@ const navSections = [
 export default function DashboardLayout({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
   const router = useRouter();
-  // Initialise depuis le cache — pas de spinner au 1er rendu
-  const [user, setUser] = useState<UserInfo | null>(() => getCachedUser());
+  // JAMAIS de spinner : on rend le layout immédiatement, user = null → placeholder
+  const [user, setUser] = useState<UserInfo | null>(null);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
-  const [verifying, setVerifying] = useState(true);
 
   useEffect(() => {
-    // Vérifie la session en arrière-plan sans bloquer l'UI
+    // Vérification silencieuse en arrière-plan
     apiFetch<{ user: UserInfo }>('/api/auth/me')
-      .then((data) => {
-        setUser(data.user);
-        setCachedUser(data.user);
-      })
+      .then((data) => setUser(data.user))
       .catch(() => {
-        clearCachedUser();
+        // Session expirée → redirection login
         router.push('/login');
-      })
-      .finally(() => setVerifying(false));
+      });
   }, [router]);
 
   const handleLogout = useCallback(async () => {
     try { await apiFetch('/api/auth/logout', { method: 'POST' }); } catch { /* ok */ }
     clearToken();
-    clearCachedUser();
     router.push('/');
   }, [router]);
 
-  // Pas de cache ET pas encore de réponse → afficher spinner (1ère visite uniquement)
-  if (!user && verifying) {
-    return (
-      <div className="min-h-screen flex items-center justify-center bg-slate-100">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-700 mx-auto mb-3" />
-          <p className="text-slate-500 text-sm">Chargement de votre espace…</p>
-        </div>
-      </div>
-    );
-  }
-
-  if (!user) return null;
-
-  const initials = user.firstName
+  // Nom d'affichage (placeholder tant que user n'est pas chargé)
+  const initials = user?.firstName
     ? `${user.firstName[0]}${user.lastName?.[0] ?? ''}`.toUpperCase()
-    : user.email[0].toUpperCase();
+    : user?.email?.[0]?.toUpperCase() ?? '…';
 
-  const displayName = user.firstName && user.lastName
+  const displayName = user?.firstName && user?.lastName
     ? `${user.firstName} ${user.lastName}`
-    : user.email.split('@')[0];
+    : user?.email?.split('@')[0] ?? '…';
 
   const SidebarNav = ({ onClick }: { onClick?: () => void }) => (
     <nav className="flex-1 py-3 overflow-y-auto">
@@ -161,9 +123,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
           </svg>
         </button>
         <div className="flex items-center gap-2">
-          <div className="w-8 h-8 bg-gradient-to-br from-blue-800 to-blue-600 rounded-lg flex items-center justify-center text-white font-bold text-xs shadow">
-            SEI
-          </div>
+          <div className="w-8 h-8 bg-gradient-to-br from-blue-800 to-blue-600 rounded-lg flex items-center justify-center text-white font-bold text-xs shadow">SEI</div>
           <span className="font-semibold text-slate-900">Summit English</span>
         </div>
         <div className="w-8 h-8 bg-blue-100 rounded-full flex items-center justify-center text-blue-900 font-bold text-sm">{initials}</div>
@@ -194,7 +154,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
       )}
 
       <div className="flex">
-        {/* Sidebar desktop */}
+        {/* Sidebar desktop — toujours visible, pas de spinner */}
         <aside className="hidden lg:flex flex-col w-72 bg-white border-r border-slate-200 fixed h-screen shadow-sm">
           <div className="p-5 border-b border-slate-100">
             <div className="flex items-center gap-3">
@@ -215,7 +175,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
               </div>
               <div className="flex-1 min-w-0">
                 <p className="text-sm font-semibold text-slate-900 truncate">{displayName}</p>
-                <p className="text-xs text-slate-500 truncate">{user.email}</p>
+                <p className="text-xs text-slate-500 truncate">{user?.email ?? ''}</p>
               </div>
             </div>
             <button
