@@ -3,8 +3,9 @@ import { getUserById } from "@/services/database/firestore-repository";
 import { getRequestUserId } from "@/services/auth/api";
 import { createCheckoutSession, isStripeConfigured } from "@/lib/stripe";
 import { isMorConfigured, morCheckoutUrlFor } from "@/lib/mor";
+import { buildMorCheckoutUrl, validateCoupon } from "@/lib/coupons";
 import { config } from "@/lib/config";
-import { RegionKey } from "@/lib/pricing";
+import { RegionKey, pricingFor } from "@/lib/pricing";
 
 // POST /api/checkout — crée une session de paiement Premium.
 // Mode 1 : Merchant of Record (Gumroad/Lemon Squeezy/Paddle) → redirection directe.
@@ -28,14 +29,31 @@ export async function POST(request: Request) {
       );
     }
 
-    const region =
-      (new URL(request.url).searchParams.get("region") as RegionKey | null) ?? "eu";
+    const searchParams = new URL(request.url).searchParams;
+    const region = (searchParams.get("region") as RegionKey | null) ?? "eu";
+    const couponCode = searchParams.get("coupon") || searchParams.get("code") || undefined;
+
+    // Validation optionnelle du coupon
+    let validCouponCode: string | undefined = undefined;
+    if (couponCode) {
+      const basePricing = pricingFor(region);
+      const couponValidation = validateCoupon(couponCode, basePricing.priceCents);
+      if (couponValidation.valid) {
+        validCouponCode = couponValidation.code;
+      }
+    }
 
     // 1) Merchant of Record : aucune banque locale requise (reversement Payoneer).
     if (isMorConfigured()) {
-      const morUrl = morCheckoutUrlFor(region);
-      if (morUrl) {
-        return NextResponse.json({ url: morUrl });
+      const baseMorUrl = morCheckoutUrlFor(region);
+      if (baseMorUrl) {
+        const enrichedMorUrl = buildMorCheckoutUrl(baseMorUrl, {
+          email: user.email,
+          userId,
+          couponCode: validCouponCode,
+          region,
+        });
+        return NextResponse.json({ url: enrichedMorUrl });
       }
     }
 

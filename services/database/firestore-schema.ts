@@ -38,7 +38,7 @@ export interface UserDoc {
   plan?: "free" | "premium";
   premiumSince?: string | null;
   premiumOrderId?: string | null;
-  premiumSource?: "stripe" | "cmi" | null;
+  premiumSource?: "stripe" | "cmi" | "mor" | "manual" | null;
   createdAt: string;
   updatedAt: string;
   lastLoginAt?: string | null;

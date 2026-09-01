@@ -22,9 +22,10 @@ import { isStripeConfigured, createCheckoutSession } from '@/lib/stripe';
 import { isMorConfigured, morCheckoutUrlFor } from '@/lib/mor';
 import { POST } from '@/app/api/checkout/route';
 
-function postCheckout(region?: string): Promise<Response> {
+function postCheckout(region?: string, coupon?: string): Promise<Response> {
   const url = new URL('http://localhost:3000/api/checkout');
   if (region) url.searchParams.set('region', region);
+  if (coupon) url.searchParams.set('coupon', coupon);
   return POST(new Request(url, { method: 'POST' }));
 }
 
@@ -37,18 +38,34 @@ describe('Checkout API — sélection du processeur (MOR > Stripe > 503)', () =>
     (getUserById as jest.Mock).mockResolvedValue(activeUser);
   });
 
-  it('redirige vers l’URL MOR quand le MOR est configuré (aucun appel Stripe)', async () => {
+  it('redirige vers l’URL MOR enrichie (email, user_id, région) quand le MOR est configuré', async () => {
     (isMorConfigured as jest.Mock).mockReturnValue(true);
     (morCheckoutUrlFor as jest.Mock).mockReturnValue('https://gumroad.com/l/summit-premium-ma');
 
     const resp = await postCheckout('ma');
     expect(resp.status).toBe(200);
-    await expect(resp.json()).resolves.toEqual({
-      url: 'https://gumroad.com/l/summit-premium-ma',
-    });
+
+    const json = await resp.json();
+    expect(json.url).toContain('https://gumroad.com/l/summit-premium-ma');
+    expect(json.url).toContain('email=student%40sei.org');
+    expect(json.url).toContain('custom_fields%5Buser_id%5D=42');
+    expect(json.url).toContain('region=ma');
+
     expect(morCheckoutUrlFor).toHaveBeenCalledWith('ma');
     expect(isStripeConfigured).not.toHaveBeenCalled();
     expect(createCheckoutSession).not.toHaveBeenCalled();
+  });
+
+  it('transmet le code promo à l\'URL MOR si valide', async () => {
+    (isMorConfigured as jest.Mock).mockReturnValue(true);
+    (morCheckoutUrlFor as jest.Mock).mockReturnValue('https://gumroad.com/l/summit-premium-eu');
+
+    const resp = await postCheckout('eu', 'LANCEMENT10');
+    expect(resp.status).toBe(200);
+
+    const json = await resp.json();
+    expect(json.url).toContain('code=LANCEMENT10');
+    expect(json.url).toContain('discount=LANCEMENT10');
   });
 
   it('bascule sur Stripe si le MOR n’est pas configuré', async () => {
