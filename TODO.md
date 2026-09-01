@@ -229,10 +229,10 @@ Aucun contenu ne part en ligne avec le validator rouge. Les seuils ne sont jamai
 
 ## PHASE 2 — BASE DE DONNÉES
 
-### T-101 : Configurer PostgreSQL
-- **État** : BACKLOG
+### T-101 : Configurer Cloud Firestore (ex-PostgreSQL — stack migrée)
+- **État** : DONE ✅ (2026-08-29, migration Firestore)
 - **Dépendances** : T-004, T-006
-- **Critères** : Base de données accessible, connexion testée
+- **Critères** : Firestore accessible, connexion Admin SDK testée (`npm run firestore:smoke` → 8/8 PASS)
 - **Jalon** : M1
 
 ### T-102 : Créer le schéma complet
@@ -636,7 +636,7 @@ Aucun contenu ne part en ligne avec le validator rouge. Les seuils ne sont jamai
 ### T-1202 : Configurer la base de données de production
 - **État** : BACKLOG
 - **Dépendances** : T-103, T-1201
-- **Critères** : Base PostgreSQL managée, migrations appliquées, sauvegarde configurée
+- **Critères** : Cloud Firestore en mode production (règles + service account), seed appliqué (`npm run firestore:seed`), plan de sauvegarde PITR configuré
 - **Jalon** : M6
 
 ### T-1203 : Déployer en production
