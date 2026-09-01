@@ -3,6 +3,7 @@ import { getUserById } from '@/services/database/firestore-repository';
 import { getRequestUserId } from '@/services/auth/api';
 import { createCheckoutSession, isStripeConfigured } from '@/lib/stripe';
 import { config } from '@/lib/config';
+import { RegionKey } from '@/lib/pricing';
 
 // POST /api/checkout — crée une Stripe Checkout Session pour le plan Premium.
 export async function POST(request: Request) {
@@ -34,12 +35,14 @@ export async function POST(request: Request) {
       );
     }
 
-    const session = await createCheckoutSession({
+        const session = await createCheckoutSession({
       userId,
       email: user.email,
+            region: ((new URL(request.url).searchParams.get('region')) as RegionKey | null) ?? 'eu',
       successUrl: `${config.app.url}/checkout/success`,
       cancelUrl: `${config.app.url}/checkout/cancel`,
     });
+
 
     return NextResponse.json({ url: session.url });
   } catch (error) {

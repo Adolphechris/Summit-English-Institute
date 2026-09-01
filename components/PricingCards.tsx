@@ -1,27 +1,48 @@
 'use client';
 
 import Link from 'next/link';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { apiFetch } from '@/lib/apiClient';
 import { PREMIUM } from '@/lib/pricing';
+import {
+  RegionKey,
+  detectRegion,
+  formatPrice,
+  pricingFor,
+} from '@/lib/pricing';
 
-function formatEur(cents: number): string {
-  return (cents / 100).toLocaleString('fr-FR', {
-    style: 'currency',
-    currency: 'EUR',
-    maximumFractionDigits: cents % 100 === 0 ? 0 : 2,
-  });
-}
+const REGION_ORDER: RegionKey[] = ['eu', 'ma', 'af', 'ca', 'us'];
+
+const REGION_LABEL: Record<RegionKey, string> = {
+  eu: '🇪🇺 29 €',
+  ma: '🇲🇦 199 MAD',
+  af: '🇫🇷 12 000 FCFA',
+  ca: '🇨🇦 39 $',
+  us: '🇺🇸 $19.99',
+};
 
 export default function PricingCards({ authenticated }: { authenticated: boolean }) {
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState<{ kind: 'info' | 'error'; text: string } | null>(null);
+  const [region, setRegion] = useState<RegionKey>('eu');
+
+  useEffect(() => {
+    const initial = detectRegion(
+      typeof navigator !== 'undefined' ? navigator.language : '',
+      navigator?.languages ?? []
+    );
+    setRegion(initial);
+  }, []);
+
+  const pricing = pricingFor(region);
 
   async function startCheckout() {
     setLoading(true);
     setMessage(null);
     try {
-      const res = await apiFetch<{ url: string }>('/api/checkout', { method: 'POST' });
+      const res = await apiFetch<{ url: string }>(`/api/checkout?region=${pricing.key}`, {
+        method: 'POST',
+      });
       window.location.href = res.url;
     } catch (err) {
       const text = err instanceof Error ? err.message : 'Erreur inconnue';
@@ -32,6 +53,26 @@ export default function PricingCards({ authenticated }: { authenticated: boolean
 
   return (
     <div>
+      {/* Sélecteur de région */}
+      <div className="flex flex-wrap justify-center gap-2 mb-8" role="radiogroup">
+        {REGION_ORDER.map((r) => (
+          <button
+            key={r}
+            type="button"
+            onClick={() => setRegion(r)}
+            aria-checked={region === r}
+            role="radio"
+            className={`px-3 py-1.5 text-sm rounded-full border font-medium transition-colors ${
+              region === r
+                ? 'bg-blue-900 text-white border-blue-900'
+                : 'bg-white text-slate-700 border-slate-300 hover:bg-slate-50'
+            }`}
+          >
+            {REGION_LABEL[r]}
+          </button>
+        ))}
+      </div>
+
       <div className="grid grid-cols-1 md:grid-cols-2 gap-8 max-w-4xl mx-auto">
         {/* Offre gratuite */}
         <div className="bg-white rounded-2xl p-8 shadow-sm border border-slate-200 flex flex-col">
@@ -64,8 +105,8 @@ export default function PricingCards({ authenticated }: { authenticated: boolean
           <h3 className="text-lg font-bold text-slate-900">{PREMIUM.name}</h3>
           <p className="text-sm text-slate-500 mt-1">Paiement unique — accès à vie</p>
           <div className="mt-4 mb-1">
-            <span className="text-4xl font-black text-blue-900">{formatEur(PREMIUM.priceEurCents)}</span>
-            <span className="text-slate-500 text-sm ml-2">≈ {PREMIUM.priceMad} MAD</span>
+            <span className="text-4xl font-black text-blue-900">{formatPrice(pricing)}</span>
+            <span className="text-slate-500 text-sm ml-2">(prix local détecté)</span>
           </div>
           <p className="text-xs text-slate-400 mb-6">Pas d&apos;abonnement, pas de frais cachés</p>
           <ul className="space-y-3 text-sm text-slate-600 flex-1">
@@ -82,7 +123,7 @@ export default function PricingCards({ authenticated }: { authenticated: boolean
               disabled={loading}
               className="mt-8 w-full px-6 py-3 rounded-xl font-bold bg-blue-900 text-white hover:bg-blue-800 transition-colors shadow-md disabled:opacity-60 disabled:cursor-not-allowed"
             >
-              {loading ? 'Redirection vers le paiement…' : `Débloquer — ${formatEur(PREMIUM.priceEurCents)}`}
+              {loading ? 'Redirection vers le paiement…' : `Débloquer — ${formatPrice(pricing)}`}
             </button>
           ) : (
             <Link
@@ -109,7 +150,8 @@ export default function PricingCards({ authenticated }: { authenticated: boolean
       )}
 
       <p className="mt-6 text-center text-xs text-slate-400">
-        Paiement sécurisé par carte bancaire via Stripe. Paiement local par CMI (Maroc) bientôt disponible.
+        Paiement sécurisé par carte bancaire via Stripe. Les prix sont affichés et facturés dans votre
+        monnaie locale. Paiement local Maroc (CMI) bientôt disponible.
       </p>
     </div>
   );

@@ -134,11 +134,16 @@ describe('Stripe — createCheckoutSession (mock fetch)', () => {
     expect(body.get('client_reference_id')).toBe('42');
     expect(body.get('metadata[userId]')).toBe('42');
     expect(body.get('metadata[plan]')).toBe('premium');
+    expect(body.get('metadata[region]')).toBe('eu');
+    expect(body.get('metadata[currency]')).toBe('EUR');
     expect(body.get('customer_email')).toBe('student@sei.org');
     expect(body.get('line_items[0][quantity]')).toBe('1');
-    expect(body.get('line_items[0][price_data][currency]')).toBe('eur');
+    expect(body.get('line_items[0][price_data][currency]')).toBe('EUR');
+    expect(body.get('line_items[0][price_data][unit_amount]')).toBe('2900');
     expect(Number(body.get('line_items[0][price_data][unit_amount]'))).toBeGreaterThan(0);
     expect(body.get('success_url')).toBe('http://localhost/checkout/success');
     expect(body.get('cancel_url')).toBe('http://localhost/checkout/cancel');
+
   });
 });
+

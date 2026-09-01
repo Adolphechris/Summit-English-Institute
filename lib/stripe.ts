@@ -7,6 +7,7 @@
 import { createHmac, timingSafeEqual } from 'crypto';
 import { config } from './config';
 import { PREMIUM } from './pricing';
+import { pricingFor, RegionKey } from './pricing';
 
 const STRIPE_API = 'https://api.stripe.com/v1';
 
@@ -23,6 +24,7 @@ export interface CheckoutSessionResult {
 export async function createCheckoutSession(params: {
   userId: number;
   email: string;
+  region?: RegionKey;
   successUrl: string;
   cancelUrl: string;
 }): Promise<CheckoutSessionResult> {
@@ -30,6 +32,8 @@ export async function createCheckoutSession(params: {
   if (!secret) {
     throw new Error('STRIPE_SECRET_KEY manquant');
   }
+
+  const regionPricing = pricingFor(params.region ?? 'eu');
 
   const body = new URLSearchParams();
   body.set('mode', 'payment');
@@ -39,11 +43,14 @@ export async function createCheckoutSession(params: {
   body.set('customer_email', params.email);
   body.set('metadata[userId]', String(params.userId));
   body.set('metadata[plan]', 'premium');
+  body.set('metadata[region]', regionPricing.key);
+  body.set('metadata[currency]', regionPricing.currency);
   body.set('line_items[0][quantity]', '1');
-  body.set('line_items[0][price_data][currency]', PREMIUM.currency);
-  body.set('line_items[0][price_data][unit_amount]', String(PREMIUM.priceEurCents));
+  body.set('line_items[0][price_data][currency]', regionPricing.currency);
+  body.set('line_items[0][price_data][unit_amount]', String(regionPricing.priceCents));
   body.set('line_items[0][price_data][product_data][name]', PREMIUM.name);
   body.set('line_items[0][price_data][product_data][description]', PREMIUM.description);
+
 
   const res = await fetch(`${STRIPE_API}/checkout/sessions`, {
     method: 'POST',
