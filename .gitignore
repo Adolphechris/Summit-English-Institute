@@ -55,3 +55,4 @@ logs
 # OS
 Thumbs.db
 .env*
+database/backup-legacy-*.json

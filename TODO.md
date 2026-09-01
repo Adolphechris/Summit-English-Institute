@@ -646,7 +646,12 @@ Aucun contenu ne part en ligne avec le validator rouge. Les seuils ne sont jamai
 - **Jalon** : M6
 
 ### T-1204 : Vérification finale (ZERO CONFUSION)
-- **État** : BACKLOG
+- **État** : EN COURS — vérifications serveur effectuées le 2026-09-01 ✅
+  - Prod en ligne (Vercel `summit-english-institute` + domaine `english.iumorave-ac.org`, HTTPS OK)
+  - Firebase project `summit-english-institut` connecté (login/session/dashboard E2E 200)
+  - Base purgée du contenu legacy : 80 leçons / 920 QCM / 40 modules exacts (backup `database/backup-legacy-1788270969682.json`, hors git)
+  - Dashboard « continuer l'apprentissage » aligné sur la leçon v2 #101
+  - ⚠️ Reste à faire : comptes de test README (`*@summit.edu`) absents de la prod — soit les créer dans le seed, soit corriger le README ; supprimer le compte de vérification `e2e-verification@summit-english-institute.dev`
 - **Dépendances** : T-1203
 - **Critères** : Où suis-je ? Que dois-je faire ? Pourquoi ? Score ? Révision ? Suite ?
 - **Jalon** : M6
