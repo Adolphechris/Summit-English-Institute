@@ -1,7 +1,10 @@
 import { NextResponse } from 'next/server';
-import { listAssessments, listLevels, listModules } from '@/services/database/firestore-repository';
+import { listAssessments, listLevels, listModules, getUserById, getLevelById } from '@/services/database/firestore-repository';
 import { createAssessmentWithQuestions } from '@/services/assessment/engine';
 import { getRequestUserId } from '@/services/auth/api';
+import { FREE_LEVELS } from '@/lib/constants';
+import { isPremiumUser } from '@/lib/entitlements';
+import { PREMIUM_REQUIRED_MESSAGE } from '@/lib/pricing';
 import type { AssessmentDistribution } from '@/types';
 
 // GET /api/assessments
@@ -34,7 +37,11 @@ export async function GET(request: Request) {
     if (levelId) filtered = filtered.filter((a) => a.levelId === parseInt(levelId, 10));
     if (type) filtered = filtered.filter((a) => a.assessmentType === type);
 
-    const assessments = filtered.map((a) => ({
+    const assessments = filtered.map((a) => {
+      const lvl = a.levelId ? levelMap.get(a.levelId) : undefined;
+      // Gating freemium : cumulatives ou niveau > FREE_LEVELS réservées Premium
+      const isPremiumContent = a.isCumulative || (lvl ? lvl.number > FREE_LEVELS : false);
+      return ({
       id: a.id,
       title: a.title,
       assessment_type: a.assessmentType,
@@ -44,7 +51,9 @@ export async function GET(request: Request) {
       lesson_id: a.lessonId || null,
       level_title: a.levelId ? levelMap.get(a.levelId)?.title || null : null,
       module_title: a.moduleId ? moduleMap.get(a.moduleId)?.title || null : null,
-    }));
+      is_premium: isPremiumContent,
+      });
+    });
 
     return NextResponse.json({ assessments });
   } catch (error) {
@@ -66,6 +75,18 @@ export async function POST(request: Request) {
 
     if (!title || !assessmentType) {
       return NextResponse.json({ error: 'Titre et type requis' }, { status: 400 });
+    }
+
+    // Gating freemium : création d'évaluation sur niveau premium réservée
+    if (levelId) {
+      const user = await getUserById(userId);
+      const lvl = await getLevelById(parseInt(levelId, 10));
+      if (lvl && lvl.number > FREE_LEVELS && !isPremiumUser(user)) {
+        return NextResponse.json(
+          { error: PREMIUM_REQUIRED_MESSAGE, code: 'PREMIUM_REQUIRED' },
+          { status: 403 }
+        );
+      }
     }
 
     const result = await createAssessmentWithQuestions({

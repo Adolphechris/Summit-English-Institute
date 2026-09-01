@@ -25,6 +25,7 @@ export async function GET(request: Request) {
         lastName: user.lastName,
         role: user.role,
         preferredLanguage: user.preferredLanguage,
+        plan: user.plan,
       },
     });
   } catch (error) {
@@ -85,6 +86,7 @@ export async function PUT(request: Request) {
         lastName: updatedUser?.lastName,
         role: updatedUser?.role,
         preferredLanguage: updatedUser?.preferredLanguage,
+        plan: updatedUser?.plan,
       },
       message: 'Profil mis à jour avec succès',
     });

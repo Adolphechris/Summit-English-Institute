@@ -2,12 +2,17 @@ import { NextResponse } from 'next/server';
 import {
   getAssessmentById,
   getQuestionsByIds,
+  getLevelById,
   saveAttempt,
   getUserProgress,
   initOrUpdateProgress,
+  getUserById,
 } from '@/services/database/firestore-repository';
 import { recordAssessmentResult } from '@/services/progress/update';
 import { getRequestUserId } from '@/services/auth/api';
+import { FREE_LEVELS } from '@/lib/constants';
+import { isPremiumUser } from '@/lib/entitlements';
+import { PREMIUM_REQUIRED_MESSAGE } from '@/lib/pricing';
 
 // POST /api/assessments/submit
 export async function POST(request: Request) {
@@ -32,6 +37,18 @@ export async function POST(request: Request) {
     const evaluation = await getAssessmentById(numericAssessmentId);
     if (!evaluation || evaluation.status === 'archived') {
       return NextResponse.json({ error: 'Évaluation introuvable' }, { status: 404 });
+    }
+
+    // Gating freemium : cumulatives ou niveau > FREE_LEVELS réservées Premium
+    const user = await getUserById(userId);
+    const evalLevel = evaluation.levelId ? await getLevelById(evaluation.levelId) : null;
+    const evalLevelNumber = evalLevel?.number ?? null;
+    const isPremiumContent = evaluation.isCumulative || (evalLevelNumber !== null && evalLevelNumber > FREE_LEVELS);
+    if (isPremiumContent && !isPremiumUser(user)) {
+      return NextResponse.json(
+        { error: PREMIUM_REQUIRED_MESSAGE, code: 'PREMIUM_REQUIRED' },
+        { status: 403 }
+      );
     }
 
     const questionIds = answers.map((a: any) => Number(a.questionId));

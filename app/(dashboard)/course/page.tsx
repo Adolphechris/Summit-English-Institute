@@ -120,7 +120,10 @@ export default function CoursePage() {
             },
           };
 
-          const config = statusConfig[day.status];
+          const premiumLocked = day.premiumRequired && day.status !== 'completed' && day.status !== 'locked';
+          const config = premiumLocked
+            ? { badge: 'Premium', variant: 'warning' as const, icon: '🔒', iconColor: 'text-amber-500', borderColor: 'border-amber-200', bgColor: 'bg-amber-50' }
+            : statusConfig[day.status];
 
           return (
             <Card
@@ -129,7 +132,9 @@ export default function CoursePage() {
                 day.status !== 'locked' ? 'hover:shadow-md transition-shadow cursor-pointer' : 'opacity-75'
               }`}
               onClick={() => {
-                if (day.status !== 'locked') {
+                if (premiumLocked) {
+                  window.location.href = '/tarifs';
+                } else if (day.status !== 'locked') {
                   window.location.href = `/lessons?day=${day.dayNumber}`;
                 }
               }}
@@ -154,6 +159,12 @@ export default function CoursePage() {
                 <div className="mt-3">
                   <ProgressBar value={day.score} size="sm" showLabel={true} />
                 </div>
+              )}
+
+              {premiumLocked && (
+                <p className="text-xs text-amber-700 mt-2 font-medium">
+                  Débloquez avec Premium →
+                </p>
               )}
 
               {day.status === 'locked' && (

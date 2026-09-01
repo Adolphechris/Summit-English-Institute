@@ -1,6 +1,9 @@
 import { NextResponse } from 'next/server';
-import { getLessonById, getModuleById, getLevelById } from '@/services/database/firestore-repository';
+import { getLessonById, getModuleById, getLevelById, getUserById } from '@/services/database/firestore-repository';
 import { getRequestUserId } from '@/services/auth/api';
+import { FREE_LEVELS } from '@/lib/constants';
+import { isPremiumUser } from '@/lib/entitlements';
+import { PREMIUM_REQUIRED_MESSAGE } from '@/lib/pricing';
 
 // GET /api/lessons/[id]
 export async function GET(
@@ -25,6 +28,15 @@ export async function GET(
 
     const parentModule = await getModuleById(lesson.moduleId);
     const parentLevel = parentModule ? await getLevelById(parentModule.levelId) : null;
+
+    // Gating freemium : leçons des niveaux > FREE_LEVELS réservées Premium
+    const user = await getUserById(userId);
+    if (parentLevel && parentLevel.number > FREE_LEVELS && !isPremiumUser(user)) {
+      return NextResponse.json(
+        { error: PREMIUM_REQUIRED_MESSAGE, code: 'PREMIUM_REQUIRED' },
+        { status: 403 }
+      );
+    }
 
     return NextResponse.json({
       lesson: {

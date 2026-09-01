@@ -30,6 +30,7 @@ export function mapUserDoc(doc: UserDoc): User {
     firstName: doc.firstName || undefined,
     lastName: doc.lastName || undefined,
     preferredLanguage: doc.preferredLanguage || 'fr',
+    plan: doc.plan === 'premium' ? ('premium' as const) : ('free' as const),
     createdAt: new Date(doc.createdAt),
     updatedAt: new Date(doc.updatedAt),
     lastLoginAt: doc.lastLoginAt ? new Date(doc.lastLoginAt) : undefined,

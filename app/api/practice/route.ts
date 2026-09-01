@@ -1,6 +1,8 @@
 import { NextResponse } from 'next/server';
-import { listQuestions, listSkills } from '@/services/database/firestore-repository';
+import { listQuestions, listSkills, listLessons, listModules, listLevels, getUserById } from '@/services/database/firestore-repository';
 import { getRequestUserId } from '@/services/auth/api';
+import { FREE_LEVELS } from '@/lib/constants';
+import { isPremiumUser } from '@/lib/entitlements';
 
 // GET /api/practice
 export async function GET(request: Request) {
@@ -24,6 +26,31 @@ export async function GET(request: Request) {
     const skillMap = new Map(allSkills.map((s) => [s.id, s]));
 
     let filtered = allQuestions.filter((q) => q.isActive);
+
+    // Gating freemium : exercices premium (leçons niveaux > FREE_LEVELS) filtrés
+    const user = await getUserById(userId);
+    if (!isPremiumUser(user)) {
+      const [allLessons, allModules, allLevels] = await Promise.all([
+        listLessons(),
+        listModules(),
+        listLevels(),
+      ]);
+      const lessonModuleMap = new Map(allLessons.map((l) => [l.id, l.moduleId]));
+      const pModuleMap = new Map(allModules.map((m) => [m.id, m]));
+      const pLevelMap = new Map(allLevels.map((l) => [l.id, l]));
+      const lessonLevelCache = new Map<number, number>();
+      const lessonLevelNumber = (lessonIdNum: number): number => {
+        const cached = lessonLevelCache.get(lessonIdNum);
+        if (cached !== undefined) return cached;
+        const mod = pModuleMap.get(lessonModuleMap.get(lessonIdNum) ?? -1);
+        const num = mod ? pLevelMap.get(mod.levelId)?.number ?? 99 : 99;
+        lessonLevelCache.set(lessonIdNum, num);
+        return num;
+      };
+      filtered = filtered.filter(
+        (q) => !q.lessonId || lessonLevelNumber(q.lessonId) <= FREE_LEVELS
+      );
+    }
 
     if (skillId) {
       filtered = filtered.filter((q) => q.skillId === parseInt(skillId, 10));

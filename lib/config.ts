@@ -51,6 +51,16 @@ export const config = {
   googleAI: {
     apiKey: process.env.GOOGLE_AI_API_KEY || '',
   },
+  payments: {
+    // Vide = paiements désactivés proprement (l'API renvoie 503, pas de crash).
+    stripeSecretKey: process.env.STRIPE_SECRET_KEY || '',
+    stripeWebhookSecret: process.env.STRIPE_WEBHOOK_SECRET || '',
+    cmi: {
+      gatewayUrl: process.env.CMI_GATEWAY_URL || '',
+      merchantId: process.env.CMI_MERCHANT_ID || '',
+      storeKey: process.env.CMI_STORE_KEY || '',
+    },
+  },
 };
 
 export type Config = typeof config;

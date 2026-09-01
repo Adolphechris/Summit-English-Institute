@@ -51,7 +51,7 @@ const PROGRAM_LEVELS = [
 /* ── Page principale ── */
 export default function DashboardPage() {
   // Données mises en cache (stale-while-revalidate) : navigation instantanée
-  const { data: me } = useApi<{ user: { email: string; firstName?: string } }>('/api/auth/me');
+  const { data: me } = useApi<{ user: { email: string; firstName?: string; plan?: string } }>('/api/auth/me');
   const { data, error, isLoading, refresh } = useApi<DashboardData>('/api/dashboard');
 
   const userName = me?.user?.firstName || me?.user?.email?.split('@')[0] || '';
@@ -108,6 +108,18 @@ export default function DashboardPage() {
                   <div className="inline-flex items-center gap-1.5 bg-orange-400/30 border border-orange-300/40 rounded-full px-3 py-1 text-xs font-bold">
                     🔥 {data.streak} jours de suite
                   </div>
+                )}
+                {me?.user?.plan === 'premium' ? (
+                  <div className="inline-flex items-center gap-1.5 bg-amber-400/30 border border-amber-300/40 rounded-full px-3 py-1 text-xs font-bold">
+                    ⭐ Premium
+                  </div>
+                ) : (
+                  <Link
+                    href="/tarifs"
+                    className="inline-flex items-center gap-1.5 bg-white/20 hover:bg-white/30 rounded-full px-3 py-1 text-xs font-bold transition-colors"
+                  >
+                    🆓 Gratuit — Passer Premium
+                  </Link>
                 )}
               </div>
               <h1 className="text-3xl sm:text-4xl font-black leading-tight">

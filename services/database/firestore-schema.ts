@@ -33,6 +33,11 @@ export interface UserDoc {
   firstName?: string | null;
   lastName?: string | null;
   preferredLanguage?: string;
+  /** Plan freemium : 'free' par défaut, 'premium' après paiement vérifié */
+  plan?: 'free' | 'premium';
+  premiumSince?: string | null;
+  premiumOrderId?: string | null;
+  premiumSource?: 'stripe' | 'cmi' | null;
   createdAt: string;
   updatedAt: string;
   lastLoginAt?: string | null;

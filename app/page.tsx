@@ -27,6 +27,12 @@ export default async function Home() {
           </div>
           <div className="flex gap-3">
             <Link
+              href="/tarifs"
+              className="px-5 py-2.5 text-sm font-semibold text-slate-700 hover:text-blue-900 transition-colors"
+            >
+              Tarifs
+            </Link>
+            <Link
               href="/login"
               className="px-5 py-2.5 text-sm font-semibold bg-blue-900 text-white rounded-xl hover:bg-blue-800 transition-colors shadow-sm"
             >
@@ -119,6 +125,25 @@ export default async function Home() {
               <div className="text-sm text-slate-500 mt-1">Jours de formation</div>
             </div>
           </div>
+        </div>
+        {/* Tarifs teaser */}
+        <div className="mt-16 bg-gradient-to-br from-blue-900 to-indigo-900 rounded-2xl p-8 sm:p-12 text-center shadow-md">
+          <div className="inline-flex items-center gap-2 bg-white/15 text-blue-100 text-xs font-bold px-3 py-1 rounded-full mb-5">
+            💳 Paiement unique — accès à vie
+          </div>
+          <h3 className="text-2xl sm:text-3xl font-black text-white mb-4">
+            Commencez gratuitement, certifiez-vous avec Premium
+          </h3>
+          <p className="text-blue-100 mb-8 max-w-2xl mx-auto">
+            Diagnostic et niveaux 1-2 offerts. Passez Premium pour débloquer les 8 niveaux,
+            les évaluations et le certificat officiel.
+          </p>
+          <Link
+            href="/tarifs"
+            className="inline-block px-8 py-4 text-base font-bold bg-white text-blue-900 rounded-xl hover:bg-blue-50 transition-all shadow-md hover:shadow-lg"
+          >
+            Voir les tarifs →
+          </Link>
         </div>
       </main>
 

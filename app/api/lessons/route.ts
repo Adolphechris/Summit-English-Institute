@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import { listLessons, listModules, listLevels } from '@/services/database/firestore-repository';
 import { getRequestUserId } from '@/services/auth/api';
+import { FREE_LEVELS } from '@/lib/constants';
 
 // GET /api/lessons
 export async function GET(request: Request) {
@@ -42,6 +43,8 @@ export async function GET(request: Request) {
         ...l,
         module_title: parentMod?.title || 'Module',
         level_title: parentLevel?.title || 'Level',
+        // Gating freemium : leçons des niveaux > FREE_LEVELS réservées Premium
+        is_premium: parentLevel ? parentLevel.number > FREE_LEVELS : false,
       };
     });
 

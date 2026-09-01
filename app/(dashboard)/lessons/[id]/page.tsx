@@ -7,6 +7,7 @@ import { Card } from '@/components/ui/Card';
 import { Button } from '@/components/ui/Button';
 import { Badge } from '@/components/ui/Badge';
 import { PageSkeleton } from '@/components/ui/Skeleton';
+import { PREMIUM_REQUIRED_MESSAGE } from '@/lib/pricing';
 import type { Lesson } from '@/types';
 
 export default function LessonPage() {
@@ -23,14 +24,31 @@ export default function LessonPage() {
   }
 
   if (error || !lesson) {
+    const isPremiumLocked = error === PREMIUM_REQUIRED_MESSAGE;
     return (
       <div className="max-w-2xl mx-auto">
-        <div className="bg-red-50 border border-red-200 rounded-xl p-6 text-center">
-          <p className="text-red-800">{error || 'Leçon introuvable'}</p>
-          <Link href="/course">
-            <Button className="mt-4">Retour au parcours</Button>
-          </Link>
-        </div>
+        {isPremiumLocked ? (
+          <div className="bg-amber-50 border border-amber-200 rounded-xl p-8 text-center">
+            <div className="text-4xl mb-3">🔒</div>
+            <h1 className="text-xl font-bold text-slate-900 mb-2">Contenu Premium</h1>
+            <p className="text-slate-600 mb-6">{error}</p>
+            <div className="flex flex-col sm:flex-row gap-3 justify-center">
+              <Link href="/tarifs">
+                <Button>Voir les tarifs</Button>
+              </Link>
+              <Link href="/course">
+                <Button variant="secondary">Retour au parcours</Button>
+              </Link>
+            </div>
+          </div>
+        ) : (
+          <div className="bg-red-50 border border-red-200 rounded-xl p-6 text-center">
+            <p className="text-red-800">{error || 'Leçon introuvable'}</p>
+            <Link href="/course">
+              <Button className="mt-4">Retour au parcours</Button>
+            </Link>
+          </div>
+        )}
       </div>
     );
   }

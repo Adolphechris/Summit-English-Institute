@@ -1,7 +1,9 @@
 import { NextResponse } from 'next/server';
-import { getUserLevelProgress, getUserProgress } from '@/services/database/firestore-repository';
+import { getUserLevelProgress, getUserProgress, getUserById } from '@/services/database/firestore-repository';
 import { DAY_TO_LEVEL, getDayTitle } from '@/lib/coursePath';
 import { getRequestUserId } from '@/services/auth/api';
+import { FREE_LEVELS } from '@/lib/constants';
+import { isPremiumUser } from '@/lib/entitlements';
 
 // GET /api/course/path
 export async function GET(request: Request) {
@@ -11,10 +13,12 @@ export async function GET(request: Request) {
       return NextResponse.json({ error: 'Non authentifié' }, { status: 401 });
     }
 
-    const [levelProgress, progress] = await Promise.all([
+    const [levelProgress, progress, userDoc] = await Promise.all([
       getUserLevelProgress(userId),
       getUserProgress(userId),
+      getUserById(userId),
     ]);
+    const userIsPremium = isPremiumUser(userDoc);
 
     const currentLevel = progress?.currentLevel || 1;
     const currentDay = progress?.currentDay || 1;
@@ -40,6 +44,7 @@ export async function GET(request: Request) {
         status,
         levelId,
         score: levelProgressData?.bestScore,
+        premiumRequired: levelId > FREE_LEVELS && !userIsPremium,
       };
     });
 

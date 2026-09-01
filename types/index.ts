@@ -19,6 +19,8 @@ export interface User {
   firstName?: string;
   lastName?: string;
   preferredLanguage: string;
+  /** Plan freemium ('free' par défaut ; 'premium' après paiement vérifié) */
+  plan?: 'free' | 'premium';
   createdAt: Date;
   updatedAt: Date;
   lastLoginAt?: Date;
@@ -475,6 +477,8 @@ export interface CoursePathDay {
   status: 'completed' | 'current' | 'available' | 'locked';
   levelId?: number;
   score?: number;
+  /** Jour réservé au programme Premium (niveau > FREE_LEVELS) */
+  premiumRequired?: boolean;
 }
 
 // ----------------------------------------------------------------------------

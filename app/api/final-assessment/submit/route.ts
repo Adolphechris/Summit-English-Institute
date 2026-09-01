@@ -10,6 +10,8 @@ import {
 } from '@/services/database/firestore-repository';
 import { APP_CONFIG } from '@/lib/constants';
 import { getRequestUserId } from '@/services/auth/api';
+import { isPremiumUser } from '@/lib/entitlements';
+import { PREMIUM_REQUIRED_MESSAGE } from '@/lib/pricing';
 
 // POST /api/final-assessment/submit
 export async function POST(request: Request) {
@@ -29,6 +31,15 @@ export async function POST(request: Request) {
     const assessment = await getAssessmentById(APP_CONFIG.finalAssessmentId);
     if (!assessment || assessment.status === 'archived') {
       return NextResponse.json({ error: 'Évaluation finale non disponible' }, { status: 404 });
+    }
+
+    // Gating freemium : l'évaluation finale certifie le programme complet → Premium
+    const user = await getUserById(userId);
+    if (!isPremiumUser(user)) {
+      return NextResponse.json(
+        { error: PREMIUM_REQUIRED_MESSAGE, code: 'PREMIUM_REQUIRED' },
+        { status: 403 }
+      );
     }
 
     const questionIds = userAnswers.map((a: any) => Number(a.questionId));

@@ -1,6 +1,9 @@
 import { NextResponse } from 'next/server';
-import { getAssessmentById, getQuestionsByIds, listLevels, listModules } from '@/services/database/firestore-repository';
+import { getAssessmentById, getQuestionsByIds, listLevels, listModules, getUserById } from '@/services/database/firestore-repository';
 import { getRequestUserId } from '@/services/auth/api';
+import { FREE_LEVELS } from '@/lib/constants';
+import { isPremiumUser } from '@/lib/entitlements';
+import { PREMIUM_REQUIRED_MESSAGE } from '@/lib/pricing';
 
 // GET /api/assessments/[id]
 export async function GET(request: Request, { params }: { params: { id: string } }) {
@@ -23,6 +26,17 @@ export async function GET(request: Request, { params }: { params: { id: string }
     const [allLevels, allModules] = await Promise.all([listLevels(), listModules()]);
     const level = allLevels.find((l) => l.id === assessment.levelId);
     const moduleItem = allModules.find((m) => m.id === assessment.moduleId);
+
+    // Gating freemium : cumulatives ou niveau > FREE_LEVELS réservées Premium
+    const user = await getUserById(userId);
+    const levelNumber = level?.number ?? null;
+    const isPremiumContent = assessment.isCumulative || (levelNumber !== null && levelNumber > FREE_LEVELS);
+    if (isPremiumContent && !isPremiumUser(user)) {
+      return NextResponse.json(
+        { error: PREMIUM_REQUIRED_MESSAGE, code: 'PREMIUM_REQUIRED' },
+        { status: 403 }
+      );
+    }
 
     // Récupérer les questions liées
     const questions = await getQuestionsByIds(assessment.questionIds || []);

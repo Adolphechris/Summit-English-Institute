@@ -11,6 +11,12 @@ export const APP_CONFIG = {
   finalAssessmentId: 999,
 } as const;
 
+/**
+ * Modèle freemium : les niveaux 1 à FREE_LEVELS (inclus) sont gratuits
+ * (diagnostic + fondamentaux). Les niveaux > FREE_LEVELS nécessitent Premium.
+ */
+export const FREE_LEVELS = 2 as const;
+
 export const MASTERY_STATUS = {
   NEW: 'new',
   LEARNING: 'learning',

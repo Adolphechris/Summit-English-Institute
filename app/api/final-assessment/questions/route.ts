@@ -1,8 +1,10 @@
 import { NextResponse } from 'next/server';
-import { getUserProgress, getAssessmentById } from '@/services/database/firestore-repository';
+import { getUserProgress, getAssessmentById, getUserById } from '@/services/database/firestore-repository';
 import { selectQuestionsForAssessment } from '@/services/assessment/engine';
 import { APP_CONFIG } from '@/lib/constants';
 import { getRequestUserId } from '@/services/auth/api';
+import { isPremiumUser } from '@/lib/entitlements';
+import { PREMIUM_REQUIRED_MESSAGE } from '@/lib/pricing';
 
 // GET /api/final-assessment/questions
 export async function GET(request: Request) {
@@ -25,6 +27,15 @@ export async function GET(request: Request) {
     const assessment = await getAssessmentById(APP_CONFIG.finalAssessmentId);
     if (!assessment || assessment.status === 'archived') {
       return NextResponse.json({ error: 'Évaluation finale non disponible' }, { status: 404 });
+    }
+
+    // Gating freemium : l'évaluation finale certifie le programme complet → Premium
+    const user = await getUserById(userId);
+    if (!isPremiumUser(user)) {
+      return NextResponse.json(
+        { error: PREMIUM_REQUIRED_MESSAGE, code: 'PREMIUM_REQUIRED' },
+        { status: 403 }
+      );
     }
 
     const questions = await selectQuestionsForAssessment({
