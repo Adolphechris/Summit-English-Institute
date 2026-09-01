@@ -35,9 +35,8 @@ export default function LoginPage() {
       // Le token JWT est posé dans un cookie httpOnly par le serveur :
       // il n'est plus stocké dans localStorage (protection XSS).
 
-      // Rediriger vers le dashboard
-      router.push('/dashboard');
-      router.refresh();
+      // Rediriger directement et proprement vers le dashboard
+      window.location.href = '/dashboard';
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Une erreur est survenue');
     } finally {
