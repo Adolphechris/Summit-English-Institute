@@ -49,12 +49,14 @@ export default async function Home() {
             🎓 Plateforme Pédagogique Interactive
           </div>
           <h2 className="text-4xl sm:text-5xl font-black text-slate-900 mb-6 tracking-tight">
-            Maîtrisez l'anglais professionnel
-            <span className="block text-blue-900 mt-2">en 20 jours intensifs</span>
+            Maîtrisez l&apos;anglais professionnel
+            <span className="block text-blue-900 mt-2">en 20 étapes clés</span>
           </h2>
-          <p className="text-lg sm:text-xl text-slate-600 mb-8 leading-relaxed">
+          <p className="text-lg sm:text-xl text-slate-600 mb-2 leading-relaxed">
             Formation de pointe en anglais informatique, développement logiciel et cybersécurité.
-            Accédez à votre tableau de bord, vos 80 leçons et vos exercices pratiques.
+          </p>
+          <p className="text-sm text-slate-400 mb-8">
+            🔥 Mode Bootcamp : 4 leçons/jour sur 20 jours · Ou avancez à votre rythme sur les 80 leçons complètes
           </p>
           <div className="flex flex-col sm:flex-row gap-4 justify-center">
             <Link
@@ -149,8 +151,14 @@ export default async function Home() {
 
       {/* Footer */}
       <footer className="border-t border-slate-200 mt-20 bg-white">
-        <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-8 text-center text-sm text-slate-500">
+        <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-8 text-center text-sm text-slate-500 space-y-3">
           <p>© {new Date().getFullYear()} Summit English Institute — IUMORAVE Academic Institute.</p>
+          <div className="flex flex-wrap justify-center gap-4 text-xs">
+            <Link href="/mentions-legales" className="hover:text-blue-600 hover:underline">Mentions Légales</Link>
+            <Link href="/cgv" className="hover:text-blue-600 hover:underline">CGV</Link>
+            <Link href="/confidentialite" className="hover:text-blue-600 hover:underline">Confidentialité &amp; RGPD</Link>
+            <Link href="/tarifs" className="hover:text-blue-600 hover:underline">Tarifs</Link>
+          </div>
         </div>
       </footer>
     </div>

@@ -4,12 +4,22 @@ import {
   getWaitlistEntryByEmail,
 } from "@/services/database/firestore-repository";
 import { RegionKey, REGION_PRICES } from "@/lib/pricing";
+import { isRateLimited } from "@/lib/rateLimit";
 
 const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
 // POST /api/waitlist — capture un lead pré-vente (bridge sans compte bancaire).
 export async function POST(request: Request) {
   try {
+    // Rate-limit : max 5 inscriptions par IP par heure (anti-spam bots)
+    const ip = request.headers.get("x-forwarded-for")?.split(",")[0]?.trim() || "unknown";
+    if (isRateLimited(`waitlist:${ip}`, 5, 3600 * 1000)) {
+      return NextResponse.json(
+        { error: "Trop de requêtes. Réessayez dans quelques minutes." },
+        { status: 429 }
+      );
+    }
+
     const {
       email,
       firstName,

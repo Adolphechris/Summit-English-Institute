@@ -60,7 +60,8 @@
       "orderIndex": 1,
       "status": "active",
       "createdAt": "2026-08-18T07:02:02.095Z",
-      "updatedAt": "2026-08-18T07:02:02.095Z"
+      "updatedAt": "2026-08-18T07:02:02.095Z",
+      "cefrLevel": "A1"
     },
     {
       "id": 2,
@@ -72,7 +73,8 @@
       "orderIndex": 2,
       "status": "active",
       "createdAt": "2026-08-18T07:02:02.095Z",
-      "updatedAt": "2026-08-18T07:02:02.095Z"
+      "updatedAt": "2026-08-18T07:02:02.095Z",
+      "cefrLevel": "A2"
     },
     {
       "id": 3,
@@ -84,7 +86,8 @@
       "orderIndex": 3,
       "status": "active",
       "createdAt": "2026-08-18T07:02:02.095Z",
-      "updatedAt": "2026-08-18T07:02:02.095Z"
+      "updatedAt": "2026-08-18T07:02:02.095Z",
+      "cefrLevel": "B1"
     },
     {
       "id": 4,
@@ -96,7 +99,8 @@
       "orderIndex": 4,
       "status": "active",
       "createdAt": "2026-08-18T07:02:02.095Z",
-      "updatedAt": "2026-08-18T07:02:02.095Z"
+      "updatedAt": "2026-08-18T07:02:02.095Z",
+      "cefrLevel": "B1+"
     },
     {
       "id": 5,
@@ -108,7 +112,8 @@
       "orderIndex": 5,
       "status": "active",
       "createdAt": "2026-08-18T07:02:02.095Z",
-      "updatedAt": "2026-08-18T07:02:02.095Z"
+      "updatedAt": "2026-08-18T07:02:02.095Z",
+      "cefrLevel": "B2"
     },
     {
       "id": 6,
@@ -120,7 +125,8 @@
       "orderIndex": 6,
       "status": "active",
       "createdAt": "2026-08-18T07:02:02.095Z",
-      "updatedAt": "2026-08-18T07:02:02.095Z"
+      "updatedAt": "2026-08-18T07:02:02.095Z",
+      "cefrLevel": "B2+"
     },
     {
       "id": 7,
@@ -132,7 +138,8 @@
       "orderIndex": 7,
       "status": "active",
       "createdAt": "2026-08-18T07:02:02.095Z",
-      "updatedAt": "2026-08-18T07:02:02.095Z"
+      "updatedAt": "2026-08-18T07:02:02.095Z",
+      "cefrLevel": "C1"
     },
     {
       "id": 8,
@@ -144,7 +151,8 @@
       "orderIndex": 8,
       "status": "active",
       "createdAt": "2026-08-18T07:02:02.095Z",
-      "updatedAt": "2026-08-18T07:02:02.095Z"
+      "updatedAt": "2026-08-18T07:02:02.095Z",
+      "cefrLevel": "C2"
     }
   ],
   "modules": [
