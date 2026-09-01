@@ -1,35 +1,34 @@
-'use client';
+"use client";
 
-import Link from 'next/link';
-import { useEffect, useState } from 'react';
-import { apiFetch } from '@/lib/apiClient';
-import { PREMIUM } from '@/lib/pricing';
+import Link from "next/link";
+import { useEffect, useState } from "react";
+import { apiFetch } from "@/lib/apiClient";
+import { PREMIUM } from "@/lib/pricing";
 import {
   RegionKey,
+  REGION_LABEL,
+  REGION_ORDER,
   detectRegion,
   formatPrice,
   pricingFor,
-} from '@/lib/pricing';
+} from "@/lib/pricing";
 
-const REGION_ORDER: RegionKey[] = ['eu', 'ma', 'af', 'ca', 'us'];
-
-const REGION_LABEL: Record<RegionKey, string> = {
-  eu: '🇪🇺 29 €',
-  ma: '🇲🇦 199 MAD',
-  af: '🇫🇷 12 000 FCFA',
-  ca: '🇨🇦 39 $',
-  us: '🇺🇸 $19.99',
-};
-
-export default function PricingCards({ authenticated }: { authenticated: boolean }) {
+export default function PricingCards({
+  authenticated,
+}: {
+  authenticated: boolean;
+}) {
   const [loading, setLoading] = useState(false);
-  const [message, setMessage] = useState<{ kind: 'info' | 'error'; text: string } | null>(null);
-  const [region, setRegion] = useState<RegionKey>('eu');
+  const [message, setMessage] = useState<{
+    kind: "info" | "error";
+    text: string;
+  } | null>(null);
+  const [region, setRegion] = useState<RegionKey>("eu");
 
   useEffect(() => {
     const initial = detectRegion(
-      typeof navigator !== 'undefined' ? navigator.language : '',
-      navigator?.languages ?? []
+      typeof navigator !== "undefined" ? navigator.language : "",
+      navigator?.languages ?? [],
     );
     setRegion(initial);
   }, []);
@@ -40,13 +39,19 @@ export default function PricingCards({ authenticated }: { authenticated: boolean
     setLoading(true);
     setMessage(null);
     try {
-      const res = await apiFetch<{ url: string }>(`/api/checkout?region=${pricing.key}`, {
-        method: 'POST',
-      });
+      const res = await apiFetch<{ url: string }>(
+        `/api/checkout?region=${pricing.key}`,
+        {
+          method: "POST",
+        },
+      );
       window.location.href = res.url;
     } catch (err) {
-      const text = err instanceof Error ? err.message : 'Erreur inconnue';
-      setMessage({ kind: text.includes('bientôt disponible') ? 'info' : 'error', text });
+      const text = err instanceof Error ? err.message : "Erreur inconnue";
+      setMessage({
+        kind: text.includes("bientôt disponible") ? "info" : "error",
+        text,
+      });
       setLoading(false);
     }
   }
@@ -54,7 +59,10 @@ export default function PricingCards({ authenticated }: { authenticated: boolean
   return (
     <div>
       {/* Sélecteur de région */}
-      <div className="flex flex-wrap justify-center gap-2 mb-8" role="radiogroup">
+      <div
+        className="flex flex-wrap justify-center gap-2 mb-8"
+        role="radiogroup"
+      >
         {REGION_ORDER.map((r) => (
           <button
             key={r}
@@ -64,8 +72,8 @@ export default function PricingCards({ authenticated }: { authenticated: boolean
             role="radio"
             className={`px-3 py-1.5 text-sm rounded-full border font-medium transition-colors ${
               region === r
-                ? 'bg-blue-900 text-white border-blue-900'
-                : 'bg-white text-slate-700 border-slate-300 hover:bg-slate-50'
+                ? "bg-blue-900 text-white border-blue-900"
+                : "bg-white text-slate-700 border-slate-300 hover:bg-slate-50"
             }`}
           >
             {REGION_LABEL[r]}
@@ -90,10 +98,12 @@ export default function PricingCards({ authenticated }: { authenticated: boolean
             ))}
           </ul>
           <Link
-            href={authenticated ? '/course' : '/register'}
+            href={authenticated ? "/course" : "/register"}
             className="mt-8 block text-center px-6 py-3 rounded-xl font-bold border border-slate-300 text-slate-700 hover:bg-slate-50 transition-colors"
           >
-            {authenticated ? 'Continuer gratuitement' : 'Créer un compte gratuit'}
+            {authenticated
+              ? "Continuer gratuitement"
+              : "Créer un compte gratuit"}
           </Link>
         </div>
 
@@ -103,12 +113,20 @@ export default function PricingCards({ authenticated }: { authenticated: boolean
             Programme complet
           </div>
           <h3 className="text-lg font-bold text-slate-900">{PREMIUM.name}</h3>
-          <p className="text-sm text-slate-500 mt-1">Paiement unique — accès à vie</p>
+          <p className="text-sm text-slate-500 mt-1">
+            Paiement unique — accès à vie
+          </p>
           <div className="mt-4 mb-1">
-            <span className="text-4xl font-black text-blue-900">{formatPrice(pricing)}</span>
-            <span className="text-slate-500 text-sm ml-2">(prix local détecté)</span>
+            <span className="text-4xl font-black text-blue-900">
+              {formatPrice(pricing)}
+            </span>
+            <span className="text-slate-500 text-sm ml-2">
+              (prix local détecté)
+            </span>
           </div>
-          <p className="text-xs text-slate-400 mb-6">Pas d&apos;abonnement, pas de frais cachés</p>
+          <p className="text-xs text-slate-400 mb-6">
+            Pas d&apos;abonnement, pas de frais cachés
+          </p>
           <ul className="space-y-3 text-sm text-slate-600 flex-1">
             {PREMIUM.features.map((feature) => (
               <li key={feature} className="flex items-start gap-2">
@@ -123,7 +141,9 @@ export default function PricingCards({ authenticated }: { authenticated: boolean
               disabled={loading}
               className="mt-8 w-full px-6 py-3 rounded-xl font-bold bg-blue-900 text-white hover:bg-blue-800 transition-colors shadow-md disabled:opacity-60 disabled:cursor-not-allowed"
             >
-              {loading ? 'Redirection vers le paiement…' : `Débloquer — ${formatPrice(pricing)}`}
+              {loading
+                ? "Redirection vers le paiement…"
+                : `Débloquer — ${formatPrice(pricing)}`}
             </button>
           ) : (
             <Link
@@ -139,9 +159,9 @@ export default function PricingCards({ authenticated }: { authenticated: boolean
       {message && (
         <div
           className={`mt-6 max-w-4xl mx-auto rounded-xl p-4 text-sm text-center ${
-            message.kind === 'info'
-              ? 'bg-blue-50 border border-blue-200 text-blue-800'
-              : 'bg-red-50 border border-red-200 text-red-800'
+            message.kind === "info"
+              ? "bg-blue-50 border border-blue-200 text-blue-800"
+              : "bg-red-50 border border-red-200 text-red-800"
           }`}
           role="status"
         >
@@ -150,8 +170,9 @@ export default function PricingCards({ authenticated }: { authenticated: boolean
       )}
 
       <p className="mt-6 text-center text-xs text-slate-400">
-        Paiement sécurisé par carte bancaire via Stripe. Les prix sont affichés et facturés dans votre
-        monnaie locale. Paiement local Maroc (CMI) bientôt disponible.
+        Paiement sécurisé par carte bancaire via Stripe. Les prix sont affichés
+        et facturés dans votre monnaie locale. Paiement local Maroc (CMI)
+        bientôt disponible.
       </p>
     </div>
   );

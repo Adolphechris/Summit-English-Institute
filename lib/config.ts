@@ -2,12 +2,12 @@
 // Configuration centralisée
 // ============================================================================
 
-import { APP_CONFIG } from './constants';
+import { APP_CONFIG } from "./constants";
 
-const isProduction = process.env.NODE_ENV === 'production';
+const isProduction = process.env.NODE_ENV === "production";
 // Phase de build Next.js (next build) : NODE_ENV=production mais aucun secret
 // runtime n'est requis tant que le serveur ne démarre pas réellement.
-const isBuildPhase = process.env.NEXT_PHASE === 'phase-production-build';
+const isBuildPhase = process.env.NEXT_PHASE === "phase-production-build";
 
 /**
  * Récupérer une variable d'environnement requise.
@@ -19,7 +19,9 @@ function requiredEnv(name: string, devFallback: string): string {
   const trimmed = value?.trim();
   if (!trimmed || trimmed === devFallback) {
     if (isProduction && !isBuildPhase) {
-      console.warn(`[CONFIG WARNING] ${name} est absent. Utilisation du fallback sécurisé.`);
+      console.warn(
+        `[CONFIG WARNING] ${name} est absent. Utilisation du fallback sécurisé.`,
+      );
     }
     return devFallback;
   }
@@ -29,8 +31,8 @@ function requiredEnv(name: string, devFallback: string): string {
 export const config = {
   app: {
     name: process.env.NEXT_PUBLIC_APP_NAME || APP_CONFIG.name,
-    url: process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000',
-    apiUrl: process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3000/api',
+    url: process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000",
+    apiUrl: process.env.NEXT_PUBLIC_API_URL || "http://localhost:3000/api",
   },
   course: {
     id: 1,
@@ -40,28 +42,33 @@ export const config = {
     finalAssessmentId: APP_CONFIG.finalAssessmentId,
   },
   auth: {
-    secret: requiredEnv('AUTH_SECRET', 'dev-only-secret-for-local-testing'),
-    expiry: process.env.AUTH_EXPIRY || '7d',
+    secret: requiredEnv("AUTH_SECRET", "dev-only-secret-for-local-testing"),
+    expiry: process.env.AUTH_EXPIRY || "7d",
   },
   firebase: {
-    projectId: process.env.FIREBASE_PROJECT_ID || process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID || 'summit-english-institute',
-    clientEmail: process.env.FIREBASE_CLIENT_EMAIL || '',
-    privateKey: process.env.FIREBASE_PRIVATE_KEY || '',
+    projectId:
+      process.env.FIREBASE_PROJECT_ID ||
+      process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID ||
+      "summit-english-institute",
+    clientEmail: process.env.FIREBASE_CLIENT_EMAIL || "",
+    privateKey: process.env.FIREBASE_PRIVATE_KEY || "",
   },
   googleAI: {
-    apiKey: process.env.GOOGLE_AI_API_KEY || '',
+    apiKey: process.env.GOOGLE_AI_API_KEY || "",
   },
   payments: {
+    // Activé en production une fois le compte bancaire + Stripe/ CMI configurés.
+    // En attendant (ou en dev), la page /tarifs propose la waitlist pré-vente.
+    enabled: process.env.NEXT_PUBLIC_PAYMENTS_ENABLED === "true",
     // Vide = paiements désactivés proprement (l'API renvoie 503, pas de crash).
-    stripeSecretKey: process.env.STRIPE_SECRET_KEY || '',
-    stripeWebhookSecret: process.env.STRIPE_WEBHOOK_SECRET || '',
+    stripeSecretKey: process.env.STRIPE_SECRET_KEY || "",
+    stripeWebhookSecret: process.env.STRIPE_WEBHOOK_SECRET || "",
     cmi: {
-      gatewayUrl: process.env.CMI_GATEWAY_URL || '',
-      merchantId: process.env.CMI_MERCHANT_ID || '',
-      storeKey: process.env.CMI_STORE_KEY || '',
+      gatewayUrl: process.env.CMI_GATEWAY_URL || "",
+      merchantId: process.env.CMI_MERCHANT_ID || "",
+      storeKey: process.env.CMI_STORE_KEY || "",
     },
   },
 };
 
 export type Config = typeof config;
-

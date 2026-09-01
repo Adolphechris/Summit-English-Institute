@@ -3,8 +3,8 @@
 // Summit English Institute — Abstraction Complète & Typage Strict
 // ============================================================================
 
-import { getFirestore } from './firebase-admin';
-import type { Query, DocumentData } from 'firebase-admin/firestore';
+import { getFirestore } from "./firebase-admin";
+import type { Query, DocumentData } from "firebase-admin/firestore";
 import {
   COLLECTIONS,
   type UserDoc,
@@ -22,11 +22,11 @@ import {
   type LessonProgressDoc,
   type ReviewItemDoc,
   type CertificateDoc,
-} from './firestore-schema';
+  type WaitlistEntry,
+} from "./firestore-schema";
 
 export { getFirestore };
 const db = () => getFirestore();
-
 
 // ============================================================================
 // 1. UTILISATEURS & SESSIONS
@@ -35,7 +35,7 @@ const db = () => getFirestore();
 export async function getUserByEmail(email: string): Promise<UserDoc | null> {
   const snapshot = await db()
     .collection(COLLECTIONS.USERS)
-    .where('email', '==', email.toLowerCase().trim())
+    .where("email", "==", email.toLowerCase().trim())
     .limit(1)
     .get();
 
@@ -50,7 +50,9 @@ export async function getUserById(id: number): Promise<UserDoc | null> {
   return { ...doc.data(), id: Number(doc.data()?.id ?? doc.id) } as UserDoc;
 }
 
-export async function createUser(data: Omit<UserDoc, 'id'> & { id?: number }): Promise<UserDoc> {
+export async function createUser(
+  data: Omit<UserDoc, "id"> & { id?: number },
+): Promise<UserDoc> {
   const now = new Date().toISOString();
   let userId = data.id;
 
@@ -63,8 +65,8 @@ export async function createUser(data: Omit<UserDoc, 'id'> & { id?: number }): P
     ...data,
     id: userId,
     email: data.email.toLowerCase().trim(),
-    role: data.role || 'student',
-    status: data.status || 'active',
+    role: data.role || "student",
+    status: data.status || "active",
     createdAt: data.createdAt || now,
     updatedAt: now,
   };
@@ -73,7 +75,10 @@ export async function createUser(data: Omit<UserDoc, 'id'> & { id?: number }): P
   return user;
 }
 
-export async function updateUser(id: number, updates: Partial<UserDoc>): Promise<void> {
+export async function updateUser(
+  id: number,
+  updates: Partial<UserDoc>,
+): Promise<void> {
   const now = new Date().toISOString();
   await db()
     .collection(COLLECTIONS.USERS)
@@ -89,7 +94,11 @@ export async function listUsers(): Promise<UserDoc[]> {
   })) as UserDoc[];
 }
 
-export async function createSession(token: string, userId: number, expiresAt: Date): Promise<void> {
+export async function createSession(
+  token: string,
+  userId: number,
+  expiresAt: Date,
+): Promise<void> {
   const now = new Date().toISOString();
   const session: SessionDoc = {
     token,
@@ -113,7 +122,7 @@ export async function deleteSession(token: string): Promise<void> {
 export async function deleteUserSessions(userId: number): Promise<void> {
   const snapshot = await db()
     .collection(COLLECTIONS.SESSIONS)
-    .where('userId', '==', userId)
+    .where("userId", "==", userId)
     .get();
 
   const batch = db().batch();
@@ -143,7 +152,7 @@ export async function getLevelById(id: number): Promise<LevelDoc | null> {
 export async function getLevelByNumber(num: number): Promise<LevelDoc | null> {
   const snapshot = await db()
     .collection(COLLECTIONS.LEVELS)
-    .where('number', '==', num)
+    .where("number", "==", num)
     .limit(1)
     .get();
   if (snapshot.empty) return null;
@@ -154,7 +163,7 @@ export async function getLevelByNumber(num: number): Promise<LevelDoc | null> {
 export async function listModules(levelId?: number): Promise<ModuleDoc[]> {
   let queryRef: Query<DocumentData> = db().collection(COLLECTIONS.MODULES);
   if (levelId !== undefined) {
-    queryRef = queryRef.where('levelId', '==', levelId);
+    queryRef = queryRef.where("levelId", "==", levelId);
   }
   const snapshot = await queryRef.get();
   const modules = snapshot.docs.map((doc) => ({
@@ -170,13 +179,16 @@ export async function getModuleById(id: number): Promise<ModuleDoc | null> {
   return { ...doc.data(), id: Number(doc.data()?.id ?? doc.id) } as ModuleDoc;
 }
 
-export async function listLessons(moduleId?: number, levelId?: number): Promise<LessonDoc[]> {
+export async function listLessons(
+  moduleId?: number,
+  levelId?: number,
+): Promise<LessonDoc[]> {
   let queryRef: Query<DocumentData> = db().collection(COLLECTIONS.LESSONS);
   if (moduleId !== undefined) {
-    queryRef = queryRef.where('moduleId', '==', moduleId);
+    queryRef = queryRef.where("moduleId", "==", moduleId);
   }
   if (levelId !== undefined) {
-    queryRef = queryRef.where('levelId', '==', levelId);
+    queryRef = queryRef.where("levelId", "==", levelId);
   }
   const snapshot = await queryRef.get();
   const lessons = snapshot.docs.map((doc) => ({
@@ -192,13 +204,15 @@ export async function getLessonById(id: number): Promise<LessonDoc | null> {
   return { ...doc.data(), id: Number(doc.data()?.id ?? doc.id) } as LessonDoc;
 }
 
-export async function createLesson(data: Omit<LessonDoc, 'id'> & { id?: number }): Promise<LessonDoc> {
+export async function createLesson(
+  data: Omit<LessonDoc, "id"> & { id?: number },
+): Promise<LessonDoc> {
   const now = new Date().toISOString();
   const lessonId = data.id || Date.now();
   const lesson: LessonDoc = {
     ...data,
     id: lessonId,
-    status: data.status || 'active',
+    status: data.status || "active",
     version: data.version || 1,
     createdAt: now,
     updatedAt: now,
@@ -214,7 +228,7 @@ export async function createLesson(data: Omit<LessonDoc, 'id'> & { id?: number }
 export async function listSkills(domain?: string): Promise<SkillDoc[]> {
   let queryRef: Query<DocumentData> = db().collection(COLLECTIONS.SKILLS);
   if (domain) {
-    queryRef = queryRef.where('domain', '==', domain);
+    queryRef = queryRef.where("domain", "==", domain);
   }
   const snapshot = await queryRef.get();
   return snapshot.docs.map((doc) => ({
@@ -232,7 +246,7 @@ export async function getSkillById(id: number): Promise<SkillDoc | null> {
 export async function getSkillByCode(code: string): Promise<SkillDoc | null> {
   const snapshot = await db()
     .collection(COLLECTIONS.SKILLS)
-    .where('code', '==', code)
+    .where("code", "==", code)
     .limit(1)
     .get();
   if (snapshot.empty) return null;
@@ -253,13 +267,13 @@ export async function listQuestions(filters?: {
   let queryRef: Query<DocumentData> = db().collection(COLLECTIONS.QUESTIONS);
 
   if (filters?.skillId !== undefined) {
-    queryRef = queryRef.where('skillId', '==', filters.skillId);
+    queryRef = queryRef.where("skillId", "==", filters.skillId);
   }
   if (filters?.lessonId !== undefined) {
-    queryRef = queryRef.where('lessonId', '==', filters.lessonId);
+    queryRef = queryRef.where("lessonId", "==", filters.lessonId);
   }
   if (filters?.type !== undefined) {
-    queryRef = queryRef.where('type', '==', filters.type);
+    queryRef = queryRef.where("type", "==", filters.type);
   }
   if (filters?.limit) {
     queryRef = queryRef.limit(filters.limit);
@@ -273,7 +287,10 @@ export async function listQuestions(filters?: {
 }
 
 export async function getQuestionById(id: number): Promise<QuestionDoc | null> {
-  const doc = await db().collection(COLLECTIONS.QUESTIONS).doc(String(id)).get();
+  const doc = await db()
+    .collection(COLLECTIONS.QUESTIONS)
+    .doc(String(id))
+    .get();
   if (!doc.exists) return null;
   return { ...doc.data(), id: Number(doc.data()?.id ?? doc.id) } as QuestionDoc;
 }
@@ -281,14 +298,21 @@ export async function getQuestionById(id: number): Promise<QuestionDoc | null> {
 export async function getQuestionsByIds(ids: number[]): Promise<QuestionDoc[]> {
   if (ids.length === 0) return [];
   // In Firestore, batch fetch by document references
-  const refs = ids.map((id) => db().collection(COLLECTIONS.QUESTIONS).doc(String(id)));
+  const refs = ids.map((id) =>
+    db().collection(COLLECTIONS.QUESTIONS).doc(String(id)),
+  );
   const docs = await db().getAll(...refs);
   return docs
     .filter((doc) => doc.exists)
-    .map((doc) => ({ ...doc.data(), id: Number(doc.data()?.id ?? doc.id) })) as QuestionDoc[];
+    .map((doc) => ({
+      ...doc.data(),
+      id: Number(doc.data()?.id ?? doc.id),
+    })) as QuestionDoc[];
 }
 
-export async function createQuestion(data: Omit<QuestionDoc, 'id'> & { id?: number }): Promise<QuestionDoc> {
+export async function createQuestion(
+  data: Omit<QuestionDoc, "id"> & { id?: number },
+): Promise<QuestionDoc> {
   const now = new Date().toISOString();
   const qId = data.id || Date.now();
   const question: QuestionDoc = {
@@ -306,7 +330,7 @@ export async function createQuestion(data: Omit<QuestionDoc, 'id'> & { id?: numb
 export async function countQuestions(): Promise<number> {
   const snapshot = await db()
     .collection(COLLECTIONS.QUESTIONS)
-    .where('isActive', '==', true)
+    .where("isActive", "==", true)
     .count()
     .get();
   return snapshot.data().count;
@@ -316,10 +340,18 @@ export async function countQuestions(): Promise<number> {
 // 5. ÉVALUATIONS & TENTATIVES
 // ============================================================================
 
-export async function getAssessmentById(id: number): Promise<AssessmentDoc | null> {
-  const doc = await db().collection(COLLECTIONS.ASSESSMENTS).doc(String(id)).get();
+export async function getAssessmentById(
+  id: number,
+): Promise<AssessmentDoc | null> {
+  const doc = await db()
+    .collection(COLLECTIONS.ASSESSMENTS)
+    .doc(String(id))
+    .get();
   if (!doc.exists) return null;
-  return { ...doc.data(), id: Number(doc.data()?.id ?? doc.id) } as AssessmentDoc;
+  return {
+    ...doc.data(),
+    id: Number(doc.data()?.id ?? doc.id),
+  } as AssessmentDoc;
 }
 
 export async function listAssessments(): Promise<AssessmentDoc[]> {
@@ -330,9 +362,14 @@ export async function listAssessments(): Promise<AssessmentDoc[]> {
   })) as AssessmentDoc[];
 }
 
-export async function saveAttempt(attempt: Omit<AttemptDoc, 'id'> & { id?: string | number }): Promise<AttemptDoc> {
+export async function saveAttempt(
+  attempt: Omit<AttemptDoc, "id"> & { id?: string | number },
+): Promise<AttemptDoc> {
   const now = new Date().toISOString();
-  const attemptId = String(attempt.id || `att_${Date.now()}_${Math.random().toString(36).substr(2, 6)}`);
+  const attemptId = String(
+    attempt.id ||
+      `att_${Date.now()}_${Math.random().toString(36).substr(2, 6)}`,
+  );
   const record: AttemptDoc = {
     ...attempt,
     id: attemptId,
@@ -342,13 +379,16 @@ export async function saveAttempt(attempt: Omit<AttemptDoc, 'id'> & { id?: strin
   return record;
 }
 
-export async function getUserAttempts(userId: number, assessmentId?: number): Promise<AttemptDoc[]> {
+export async function getUserAttempts(
+  userId: number,
+  assessmentId?: number,
+): Promise<AttemptDoc[]> {
   let queryRef: Query<DocumentData> = db()
     .collection(COLLECTIONS.ATTEMPTS)
-    .where('userId', '==', userId);
+    .where("userId", "==", userId);
 
   if (assessmentId !== undefined) {
-    queryRef = queryRef.where('assessmentId', '==', assessmentId);
+    queryRef = queryRef.where("assessmentId", "==", assessmentId);
   }
 
   const snapshot = await queryRef.get();
@@ -356,7 +396,11 @@ export async function getUserAttempts(userId: number, assessmentId?: number): Pr
     ...doc.data(),
     id: doc.id,
   })) as AttemptDoc[];
-  return attempts.sort((a, b) => new Date(b.createdAt || 0).getTime() - new Date(a.createdAt || 0).getTime());
+  return attempts.sort(
+    (a, b) =>
+      new Date(b.createdAt || 0).getTime() -
+      new Date(a.createdAt || 0).getTime(),
+  );
 }
 
 export async function countTotalAttempts(): Promise<number> {
@@ -368,13 +412,21 @@ export async function countTotalAttempts(): Promise<number> {
 // 6. PROGRESSION, MAÎTRISE & RÉVISION
 // ============================================================================
 
-export async function getUserProgress(userId: number): Promise<ProgressDoc | null> {
-  const doc = await db().collection(COLLECTIONS.PROGRESS).doc(String(userId)).get();
+export async function getUserProgress(
+  userId: number,
+): Promise<ProgressDoc | null> {
+  const doc = await db()
+    .collection(COLLECTIONS.PROGRESS)
+    .doc(String(userId))
+    .get();
   if (!doc.exists) return null;
   return doc.data() as ProgressDoc;
 }
 
-export async function initOrUpdateProgress(userId: number, updates: Partial<ProgressDoc>): Promise<void> {
+export async function initOrUpdateProgress(
+  userId: number,
+  updates: Partial<ProgressDoc>,
+): Promise<void> {
   const now = new Date().toISOString();
   const docRef = db().collection(COLLECTIONS.PROGRESS).doc(String(userId));
   const existing = await docRef.get();
@@ -395,15 +447,20 @@ export async function initOrUpdateProgress(userId: number, updates: Partial<Prog
   }
 }
 
-export async function getUserSkillProgress(userId: number): Promise<SkillProgressDoc[]> {
+export async function getUserSkillProgress(
+  userId: number,
+): Promise<SkillProgressDoc[]> {
   const snapshot = await db()
     .collection(COLLECTIONS.SKILL_PROGRESS)
-    .where('userId', '==', userId)
+    .where("userId", "==", userId)
     .get();
   return snapshot.docs.map((doc) => doc.data() as SkillProgressDoc);
 }
 
-export async function getSkillProgress(userId: number, skillId: number): Promise<SkillProgressDoc | null> {
+export async function getSkillProgress(
+  userId: number,
+  skillId: number,
+): Promise<SkillProgressDoc | null> {
   const doc = await db()
     .collection(COLLECTIONS.SKILL_PROGRESS)
     .doc(`${userId}_${skillId}`)
@@ -415,7 +472,7 @@ export async function getSkillProgress(userId: number, skillId: number): Promise
 export async function upsertSkillProgress(
   userId: number,
   skillId: number,
-  data: Partial<SkillProgressDoc>
+  data: Partial<SkillProgressDoc>,
 ): Promise<void> {
   const now = new Date().toISOString();
   await db()
@@ -424,15 +481,20 @@ export async function upsertSkillProgress(
     .set({ userId, skillId, ...data, updatedAt: now }, { merge: true });
 }
 
-export async function getUserLevelProgress(userId: number): Promise<LevelProgressDoc[]> {
+export async function getUserLevelProgress(
+  userId: number,
+): Promise<LevelProgressDoc[]> {
   const snapshot = await db()
     .collection(COLLECTIONS.LEVEL_PROGRESS)
-    .where('userId', '==', userId)
+    .where("userId", "==", userId)
     .get();
   return snapshot.docs.map((doc) => doc.data() as LevelProgressDoc);
 }
 
-export async function getLevelProgress(userId: number, levelId: number): Promise<LevelProgressDoc | null> {
+export async function getLevelProgress(
+  userId: number,
+  levelId: number,
+): Promise<LevelProgressDoc | null> {
   const doc = await db()
     .collection(COLLECTIONS.LEVEL_PROGRESS)
     .doc(`${userId}_${levelId}`)
@@ -444,7 +506,7 @@ export async function getLevelProgress(userId: number, levelId: number): Promise
 export async function upsertLevelProgress(
   userId: number,
   levelId: number,
-  data: Partial<LevelProgressDoc>
+  data: Partial<LevelProgressDoc>,
 ): Promise<void> {
   const now = new Date().toISOString();
   await db()
@@ -453,10 +515,12 @@ export async function upsertLevelProgress(
     .set({ userId, levelId, ...data, updatedAt: now }, { merge: true });
 }
 
-export async function getUserLessonProgress(userId: number): Promise<LessonProgressDoc[]> {
+export async function getUserLessonProgress(
+  userId: number,
+): Promise<LessonProgressDoc[]> {
   const snapshot = await db()
     .collection(COLLECTIONS.LESSON_PROGRESS)
-    .where('userId', '==', userId)
+    .where("userId", "==", userId)
     .get();
   return snapshot.docs.map((doc) => doc.data() as LessonProgressDoc);
 }
@@ -464,7 +528,7 @@ export async function getUserLessonProgress(userId: number): Promise<LessonProgr
 export async function upsertLessonProgress(
   userId: number,
   lessonId: number,
-  data: Partial<LessonProgressDoc>
+  data: Partial<LessonProgressDoc>,
 ): Promise<void> {
   const now = new Date().toISOString();
   await db()
@@ -473,10 +537,12 @@ export async function upsertLessonProgress(
     .set({ userId, lessonId, ...data, updatedAt: now }, { merge: true });
 }
 
-export async function getUserReviewItems(userId: number): Promise<ReviewItemDoc[]> {
+export async function getUserReviewItems(
+  userId: number,
+): Promise<ReviewItemDoc[]> {
   const snapshot = await db()
     .collection(COLLECTIONS.REVIEW_ITEMS)
-    .where('userId', '==', userId)
+    .where("userId", "==", userId)
     .get();
   return snapshot.docs.map((doc) => doc.data() as ReviewItemDoc);
 }
@@ -484,7 +550,7 @@ export async function getUserReviewItems(userId: number): Promise<ReviewItemDoc[
 export async function upsertReviewItem(
   userId: number,
   skillId: number,
-  data: Partial<ReviewItemDoc>
+  data: Partial<ReviewItemDoc>,
 ): Promise<void> {
   const now = new Date().toISOString();
   await db()
@@ -493,18 +559,21 @@ export async function upsertReviewItem(
     .set({ userId, skillId, ...data, updatedAt: now }, { merge: true });
 }
 
-export async function markReviewItemMastered(userId: number, skillId: number): Promise<void> {
+export async function markReviewItemMastered(
+  userId: number,
+  skillId: number,
+): Promise<void> {
   const now = new Date().toISOString();
   await db()
     .collection(COLLECTIONS.REVIEW_ITEMS)
     .doc(`${userId}_${skillId}`)
     .set(
       {
-        status: 'mastered',
+        status: "mastered",
         completedAt: now,
         updatedAt: now,
       },
-      { merge: true }
+      { merge: true },
     );
 }
 
@@ -512,33 +581,45 @@ export async function markReviewItemMastered(userId: number, skillId: number): P
 // 7. CERTIFICATS
 // ============================================================================
 
-export async function getCertificateByCode(code: string): Promise<CertificateDoc | null> {
+export async function getCertificateByCode(
+  code: string,
+): Promise<CertificateDoc | null> {
   const snapshot = await db()
     .collection(COLLECTIONS.CERTIFICATES)
-    .where('certificateCode', '==', code)
+    .where("certificateCode", "==", code)
     .limit(1)
     .get();
   if (snapshot.empty) return null;
   return snapshot.docs[0].data() as CertificateDoc;
 }
 
-export async function getUserCertificate(userId: number): Promise<CertificateDoc | null> {
+export async function getUserCertificate(
+  userId: number,
+): Promise<CertificateDoc | null> {
   const snapshot = await db()
     .collection(COLLECTIONS.CERTIFICATES)
-    .where('userId', '==', userId)
+    .where("userId", "==", userId)
     .limit(1)
     .get();
   if (snapshot.empty) return null;
   return snapshot.docs[0].data() as CertificateDoc;
 }
 
-export async function createCertificate(cert: CertificateDoc): Promise<CertificateDoc> {
-  await db().collection(COLLECTIONS.CERTIFICATES).doc(cert.certificateCode).set(cert);
+export async function createCertificate(
+  cert: CertificateDoc,
+): Promise<CertificateDoc> {
+  await db()
+    .collection(COLLECTIONS.CERTIFICATES)
+    .doc(cert.certificateCode)
+    .set(cert);
   return cert;
 }
 
 export async function countCertificates(): Promise<number> {
-  const snapshot = await db().collection(COLLECTIONS.CERTIFICATES).count().get();
+  const snapshot = await db()
+    .collection(COLLECTIONS.CERTIFICATES)
+    .count()
+    .get();
   return snapshot.data().count;
 }
 
@@ -553,13 +634,22 @@ export async function getAdminStats(): Promise<{
   totalAttempts: number;
   certificatesIssued: number;
 }> {
-  const [usersSnap, lessonsSnap, questionsSnap, attemptsSnap, certsSnap] = await Promise.all([
-    db().collection(COLLECTIONS.USERS).count().get(),
-    db().collection(COLLECTIONS.LESSONS).where('status', '==', 'active').count().get(),
-    db().collection(COLLECTIONS.QUESTIONS).where('isActive', '==', true).count().get(),
-    db().collection(COLLECTIONS.ATTEMPTS).count().get(),
-    db().collection(COLLECTIONS.CERTIFICATES).count().get(),
-  ]);
+  const [usersSnap, lessonsSnap, questionsSnap, attemptsSnap, certsSnap] =
+    await Promise.all([
+      db().collection(COLLECTIONS.USERS).count().get(),
+      db()
+        .collection(COLLECTIONS.LESSONS)
+        .where("status", "==", "active")
+        .count()
+        .get(),
+      db()
+        .collection(COLLECTIONS.QUESTIONS)
+        .where("isActive", "==", true)
+        .count()
+        .get(),
+      db().collection(COLLECTIONS.ATTEMPTS).count().get(),
+      db().collection(COLLECTIONS.CERTIFICATES).count().get(),
+    ]);
 
   return {
     totalUsers: usersSnap.data().count,
@@ -568,4 +658,26 @@ export async function getAdminStats(): Promise<{
     totalAttempts: attemptsSnap.data().count,
     certificatesIssued: certsSnap.data().count,
   };
+}
+
+export async function addToWaitlist(
+  entry: Omit<WaitlistEntry, "createdAt" | "updatedAt">,
+): Promise<WaitlistEntry> {
+  const now = new Date().toISOString();
+  const doc: WaitlistEntry = { ...entry, createdAt: now, updatedAt: now };
+  await db().collection(COLLECTIONS.WAITLIST).doc(entry.email).set(doc);
+  return doc;
+}
+
+export async function getWaitlistEntryByEmail(
+  email: string,
+): Promise<WaitlistEntry | null> {
+  const doc = await db().collection(COLLECTIONS.WAITLIST).doc(email).get();
+  if (!doc.exists) return null;
+  return doc.data() as WaitlistEntry;
+}
+
+export async function countWaitlist(): Promise<number> {
+  const snapshot = await db().collection(COLLECTIONS.WAITLIST).count().get();
+  return snapshot.data().count;
 }

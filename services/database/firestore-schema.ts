@@ -4,25 +4,26 @@
 // ============================================================================
 
 export const COLLECTIONS = {
-  USERS: 'users',
-  SESSIONS: 'sessions',
-  LEVELS: 'levels',
-  MODULES: 'modules',
-  LESSONS: 'lessons',
-  SKILLS: 'skills',
-  QUESTIONS: 'questions',
-  ASSESSMENTS: 'assessments',
-  ATTEMPTS: 'attempts',
-  PROGRESS: 'user_progress',
-  SKILL_PROGRESS: 'user_skill_progress',
-  LEVEL_PROGRESS: 'user_level_progress',
-  LESSON_PROGRESS: 'user_lesson_progress',
-  REVIEW_ITEMS: 'user_review_items',
-  CERTIFICATES: 'certificates',
+  USERS: "users",
+  SESSIONS: "sessions",
+  LEVELS: "levels",
+  MODULES: "modules",
+  LESSONS: "lessons",
+  SKILLS: "skills",
+  QUESTIONS: "questions",
+  ASSESSMENTS: "assessments",
+  ATTEMPTS: "attempts",
+  PROGRESS: "user_progress",
+  SKILL_PROGRESS: "user_skill_progress",
+  LEVEL_PROGRESS: "user_level_progress",
+  LESSON_PROGRESS: "user_lesson_progress",
+  REVIEW_ITEMS: "user_review_items",
+  CERTIFICATES: "certificates",
+  WAITLIST: "waitlist",
 } as const;
 
-export type UserRole = 'student' | 'admin' | 'teacher';
-export type UserStatus = 'active' | 'suspended' | 'pending';
+export type UserRole = "student" | "admin" | "teacher";
+export type UserStatus = "active" | "suspended" | "pending";
 
 export interface UserDoc {
   id: number;
@@ -34,13 +35,24 @@ export interface UserDoc {
   lastName?: string | null;
   preferredLanguage?: string;
   /** Plan freemium : 'free' par défaut, 'premium' après paiement vérifié */
-  plan?: 'free' | 'premium';
+  plan?: "free" | "premium";
   premiumSince?: string | null;
   premiumOrderId?: string | null;
-  premiumSource?: 'stripe' | 'cmi' | null;
+  premiumSource?: "stripe" | "cmi" | null;
   createdAt: string;
   updatedAt: string;
   lastLoginAt?: string | null;
+}
+
+/** Entrée de liste d'attente pré-vente (bridge avant activation du compte bancaire). */
+export interface WaitlistEntry {
+  email: string;
+  firstName?: string | null;
+  region: string;
+  source: "tarifs" | "landing" | "other";
+  status: "pending" | "subscribed" | "converted";
+  createdAt: string;
+  updatedAt: string;
 }
 
 export interface SessionDoc {
@@ -58,7 +70,7 @@ export interface LevelDoc {
   description?: string;
   passingScore: number;
   orderIndex: number;
-  status: 'active' | 'archived' | 'draft';
+  status: "active" | "archived" | "draft";
   cefrLevel?: string;
   createdAt?: string;
   updatedAt?: string;
@@ -71,7 +83,7 @@ export interface ModuleDoc {
   objective?: string;
   description?: string;
   orderIndex: number;
-  status: 'active' | 'archived' | 'draft';
+  status: "active" | "archived" | "draft";
   createdAt?: string;
   updatedAt?: string;
 }
@@ -90,7 +102,7 @@ export interface LessonDoc {
   practice?: any[];
   summary?: string;
   orderIndex: number;
-  status: 'active' | 'archived' | 'draft';
+  status: "active" | "archived" | "draft";
   version: number;
   createdAt?: string;
   updatedAt?: string;
@@ -103,9 +115,9 @@ export interface SkillDoc {
   description?: string;
   domain: string;
   category?: string;
-  difficulty: 'A' | 'B' | 'C' | 'D';
+  difficulty: "A" | "B" | "C" | "D";
   isCritical: boolean;
-  status: 'active' | 'archived';
+  status: "active" | "archived";
   createdAt?: string;
   updatedAt?: string;
 }
@@ -115,7 +127,7 @@ export interface QuestionDoc {
   type: string;
   questionText: string;
   context?: string | null;
-  difficulty: 'A' | 'B' | 'C' | 'D';
+  difficulty: "A" | "B" | "C" | "D";
   skillId: number;
   lessonId?: number | null;
   explanation?: string | null;
@@ -139,7 +151,7 @@ export interface AssessmentDoc {
   questionCount?: number;
   questionIds: number[];
   isCumulative: boolean;
-  status: 'active' | 'archived';
+  status: "active" | "archived";
   createdAt?: string;
   updatedAt?: string;
 }
@@ -159,8 +171,8 @@ export interface AttemptDoc {
   startedAt: string;
   finishedAt?: string;
   score: number;
-  status: 'in_progress' | 'completed' | 'abandoned';
-  result: 'passed' | 'failed' | 'pending';
+  status: "in_progress" | "completed" | "abandoned";
+  result: "passed" | "failed" | "pending";
   answers: AttemptAnswer[];
   createdAt?: string;
 }
@@ -179,10 +191,16 @@ export interface SkillProgressDoc {
   userId: number;
   skillId: number;
   masteryScore: number;
-  masteryStatus: 'new' | 'learning' | 'practicing' | 'stable' | 'mastered' | 'review_required';
+  masteryStatus:
+    | "new"
+    | "learning"
+    | "practicing"
+    | "stable"
+    | "mastered"
+    | "review_required";
   attemptCount: number;
   correctCount: number;
-  priority: 'critical' | 'high' | 'normal' | 'low';
+  priority: "critical" | "high" | "normal" | "low";
   lastAttemptAt?: string;
   nextReviewAt?: string;
   updatedAt: string;
@@ -216,8 +234,8 @@ export interface ReviewItemDoc {
   errorCount: number;
   lastErrorAt: string;
   lastResult?: number;
-  priority: 'critical' | 'high' | 'normal' | 'low';
-  status: 'due' | 'in_review' | 'mastered' | 'dismissed';
+  priority: "critical" | "high" | "normal" | "low";
+  status: "due" | "in_review" | "mastered" | "dismissed";
   scheduledFor?: string;
   completedAt?: string | null;
   updatedAt: string;
@@ -229,5 +247,5 @@ export interface CertificateDoc {
   userName: string;
   finalScore: number;
   completedAt: string;
-  status: 'issued' | 'revoked';
+  status: "issued" | "revoked";
 }

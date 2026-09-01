@@ -1,27 +1,27 @@
-import { NextResponse } from 'next/server';
-import { getUserById } from '@/services/database/firestore-repository';
-import { getRequestUserId } from '@/services/auth/api';
-import { createCheckoutSession, isStripeConfigured } from '@/lib/stripe';
-import { config } from '@/lib/config';
-import { RegionKey } from '@/lib/pricing';
+import { NextResponse } from "next/server";
+import { getUserById } from "@/services/database/firestore-repository";
+import { getRequestUserId } from "@/services/auth/api";
+import { createCheckoutSession, isStripeConfigured } from "@/lib/stripe";
+import { config } from "@/lib/config";
+import { RegionKey } from "@/lib/pricing";
 
 // POST /api/checkout — crée une Stripe Checkout Session pour le plan Premium.
 export async function POST(request: Request) {
   try {
     const userId = await getRequestUserId(request);
     if (!userId) {
-      return NextResponse.json({ error: 'Non authentifié' }, { status: 401 });
+      return NextResponse.json({ error: "Non authentifié" }, { status: 401 });
     }
 
     const user = await getUserById(userId);
-    if (!user || user.status !== 'active') {
-      return NextResponse.json({ error: 'Session invalide' }, { status: 401 });
+    if (!user || user.status !== "active") {
+      return NextResponse.json({ error: "Session invalide" }, { status: 401 });
     }
 
-    if (user.plan === 'premium') {
+    if (user.plan === "premium") {
       return NextResponse.json(
-        { error: 'Vous avez déjà accès au programme Premium.' },
-        { status: 409 }
+        { error: "Vous avez déjà accès au programme Premium." },
+        { status: 409 },
       );
     }
 
@@ -31,22 +31,23 @@ export async function POST(request: Request) {
           error:
             "Le paiement en ligne sera bientôt disponible. Contactez-nous pour activer Premium dès maintenant.",
         },
-        { status: 503 }
+        { status: 503 },
       );
     }
 
-        const session = await createCheckoutSession({
+    const session = await createCheckoutSession({
       userId,
       email: user.email,
-            region: ((new URL(request.url).searchParams.get('region')) as RegionKey | null) ?? 'eu',
+      region:
+        (new URL(request.url).searchParams.get("region") as RegionKey | null) ??
+        "eu",
       successUrl: `${config.app.url}/checkout/success`,
       cancelUrl: `${config.app.url}/checkout/cancel`,
     });
 
-
     return NextResponse.json({ url: session.url });
   } catch (error) {
-    console.error('[CHECKOUT ERROR]', error);
-    return NextResponse.json({ error: 'Erreur serveur' }, { status: 500 });
+    console.error("[CHECKOUT ERROR]", error);
+    return NextResponse.json({ error: "Erreur serveur" }, { status: 500 });
   }
 }
