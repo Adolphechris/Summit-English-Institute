@@ -4,6 +4,7 @@ import { useState, useEffect, useCallback } from 'react';
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
 import { apiFetch, clearToken } from '@/lib/apiClient';
+import PwaInstallBanner from '@/components/PwaInstallBanner';
 
 type UserInfo = { email: string; firstName?: string; lastName?: string; role?: string };
 
@@ -194,6 +195,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
           </div>
         </main>
       </div>
+      <PwaInstallBanner />
     </div>
   );
 }

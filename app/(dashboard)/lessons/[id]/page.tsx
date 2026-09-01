@@ -7,6 +7,7 @@ import { Card } from '@/components/ui/Card';
 import { Button } from '@/components/ui/Button';
 import { Badge } from '@/components/ui/Badge';
 import { PageSkeleton } from '@/components/ui/Skeleton';
+import { AudioButton } from '@/components/ui/AudioButton';
 import { PREMIUM_REQUIRED_MESSAGE } from '@/lib/pricing';
 import type { Lesson } from '@/types';
 
@@ -67,32 +68,38 @@ export default function LessonPage() {
 
       {/* Objective */}
       <Card className="p-6">
-        <h2 className="text-lg font-semibold text-slate-900 mb-3">Objectif</h2>
+        <h2 className="text-lg font-semibold text-slate-900 mb-3">🎯 Objectif Pédagogique</h2>
         <p className="text-slate-700">{lesson.objective}</p>
       </Card>
 
       {/* Explanation */}
       <Card className="p-6">
-        <h2 className="text-lg font-semibold text-slate-900 mb-3">Explication</h2>
+        <h2 className="text-lg font-semibold text-slate-900 mb-3">📚 Explication &amp; Notions Clés</h2>
         <div className="prose prose-slate max-w-none">
-          <p className="text-slate-700 whitespace-pre-wrap">{lesson.explanation}</p>
+          <p className="text-slate-700 whitespace-pre-wrap leading-relaxed">{lesson.explanation}</p>
         </div>
       </Card>
 
-      {/* Examples */}
+      {/* Examples with Audio */}
       {lesson.examples && lesson.examples.length > 0 && (
         <Card className="p-6">
-          <h2 className="text-lg font-semibold text-slate-900 mb-3">Exemples</h2>
+          <div className="flex items-center justify-between mb-3">
+            <h2 className="text-lg font-semibold text-slate-900">💬 Exemples en Contexte Réel</h2>
+            <span className="text-xs text-slate-400">Cliquez sur 🔊 pour écouter</span>
+          </div>
           <div className="space-y-3">
             {lesson.examples.map((example, index) => (
-              <div key={index} className="border-l-4 border-blue-200 pl-4 py-2 bg-slate-50 rounded-r-lg">
-                <p className="font-medium text-slate-900">"{example.sentence}"</p>
+              <div key={index} className="border-l-4 border-blue-500 pl-4 py-3 bg-slate-50 rounded-r-xl">
+                <div className="flex items-start justify-between gap-3">
+                  <p className="font-semibold text-slate-900 text-base">"{example.sentence}"</p>
+                  <AudioButton text={example.sentence} size="sm" />
+                </div>
                 {example.meaning && (
                   <p className="text-sm text-slate-600 mt-1">{example.meaning}</p>
                 )}
                 {example.itContext && (
-                  <p className="text-sm text-blue-700 mt-1">
-                    <strong>IT :</strong> {example.itContext}
+                  <p className="text-xs text-blue-800 bg-blue-50 border border-blue-100 rounded-md px-2.5 py-1 mt-2 inline-block font-medium">
+                    🛠️ <strong>Contexte IT :</strong> {example.itContext}
                   </p>
                 )}
               </div>
@@ -101,20 +108,31 @@ export default function LessonPage() {
         </Card>
       )}
 
-      {/* Vocabulary */}
+      {/* Vocabulary with Audio */}
       {lesson.vocabulary && lesson.vocabulary.length > 0 && (
         <Card className="p-6">
-          <h2 className="text-lg font-semibold text-slate-900 mb-3">Vocabulaire</h2>
+          <div className="flex items-center justify-between mb-3">
+            <h2 className="text-lg font-semibold text-slate-900">📖 Vocabulaire Spécialisé IT</h2>
+            <span className="text-xs text-slate-400">Prononciation native</span>
+          </div>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             {lesson.vocabulary.map((item, index) => (
-              <div key={index} className="border border-slate-200 rounded-lg p-3">
-                <p className="font-medium text-slate-900">{item.word}</p>
-                {item.pronunciation && (
-                  <p className="text-xs text-slate-500">/{item.pronunciation}/</p>
-                )}
-                <p className="text-sm text-slate-600 mt-1">{item.definition}</p>
+              <div key={index} className="border border-slate-200 rounded-xl p-3.5 bg-white hover:border-blue-200 transition-colors shadow-sm">
+                <div className="flex items-center justify-between gap-2">
+                  <div className="flex items-baseline gap-2">
+                    <p className="font-bold text-slate-900 text-base">{item.word}</p>
+                    {item.pronunciation && (
+                      <p className="text-xs text-slate-400 font-mono">/{item.pronunciation}/</p>
+                    )}
+                  </div>
+                  <AudioButton text={item.word} size="sm" />
+                </div>
+                <p className="text-xs text-slate-600 mt-1.5 leading-relaxed">{item.definition}</p>
                 {item.example && (
-                  <p className="text-xs text-slate-500 mt-1 italic">"{item.example}"</p>
+                  <div className="mt-2 pt-2 border-t border-slate-100 flex items-center justify-between gap-2">
+                    <p className="text-xs text-slate-500 italic">"{item.example}"</p>
+                    <AudioButton text={item.example} size="sm" />
+                  </div>
                 )}
               </div>
             ))}
@@ -124,38 +142,38 @@ export default function LessonPage() {
 
       {/* IT Context */}
       {lesson.itContext && (
-        <Card className="p-6 bg-blue-50 border-blue-200">
-          <h2 className="text-lg font-semibold text-blue-900 mb-3">Contexte IT</h2>
-          <p className="text-blue-800">{lesson.itContext}</p>
+        <Card className="p-6 bg-blue-50/70 border-blue-200">
+          <h2 className="text-lg font-semibold text-blue-950 mb-2">⚡ Mise en situation professionnelle</h2>
+          <p className="text-blue-900 text-sm leading-relaxed">{lesson.itContext}</p>
         </Card>
       )}
 
       {/* Practice */}
       {lesson.practice && lesson.practice.length > 0 && (
         <Card className="p-6">
-          <h2 className="text-lg font-semibold text-slate-900 mb-3">Pratique</h2>
+          <h2 className="text-lg font-semibold text-slate-900 mb-3">✍️ Pratique &amp; Exercices</h2>
           <div className="space-y-4">
             {lesson.practice.map((item, index) => (
-              <div key={index} className="border border-slate-200 rounded-lg p-4">
+              <div key={index} className="border border-slate-200 rounded-xl p-4 bg-slate-50/50">
                 <p className="font-medium text-slate-900 mb-3">{item.question}</p>
                 {item.options && (
                   <div className="space-y-2">
                     {item.options.map((option, optIndex) => (
-                      <button
+                      <div
                         key={optIndex}
-                        className="w-full text-left px-4 py-2 border border-slate-300 rounded-lg hover:bg-slate-50 transition-colors"
+                        className="w-full text-left px-4 py-2.5 bg-white border border-slate-200 rounded-lg text-sm text-slate-700 font-medium"
                       >
                         {option}
-                      </button>
+                      </div>
                     ))}
                   </div>
                 )}
                 {item.explanation && (
-                  <div className="mt-3 p-3 bg-green-50 border border-green-200 rounded-lg">
-                    <p className="text-sm text-green-800">
-                      <strong>Réponse :</strong> {item.correctAnswer}
+                  <div className="mt-3 p-3 bg-emerald-50 border border-emerald-200 rounded-lg">
+                    <p className="text-xs font-bold text-emerald-900">
+                      ✓ Réponse : {item.correctAnswer}
                     </p>
-                    <p className="text-sm text-green-700 mt-1">{item.explanation}</p>
+                    <p className="text-xs text-emerald-800 mt-1 leading-relaxed">{item.explanation}</p>
                   </div>
                 )}
               </div>

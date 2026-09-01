@@ -629,14 +629,18 @@ export async function countCertificates(): Promise<number> {
 
 export async function getAdminStats(): Promise<{
   totalUsers: number;
+  premiumUsers: number;
+  waitlistCount: number;
   activeLessons: number;
   activeQuestions: number;
   totalAttempts: number;
   certificatesIssued: number;
 }> {
-  const [usersSnap, lessonsSnap, questionsSnap, attemptsSnap, certsSnap] =
+  const [usersSnap, premiumSnap, waitlistSnap, lessonsSnap, questionsSnap, attemptsSnap, certsSnap] =
     await Promise.all([
       db().collection(COLLECTIONS.USERS).count().get(),
+      db().collection(COLLECTIONS.USERS).where("plan", "==", "premium").count().get(),
+      db().collection(COLLECTIONS.WAITLIST).count().get(),
       db()
         .collection(COLLECTIONS.LESSONS)
         .where("status", "==", "active")
@@ -653,6 +657,8 @@ export async function getAdminStats(): Promise<{
 
   return {
     totalUsers: usersSnap.data().count,
+    premiumUsers: premiumSnap.data().count,
+    waitlistCount: waitlistSnap.data().count,
     activeLessons: lessonsSnap.data().count,
     activeQuestions: questionsSnap.data().count,
     totalAttempts: attemptsSnap.data().count,
@@ -680,4 +686,13 @@ export async function getWaitlistEntryByEmail(
 export async function countWaitlist(): Promise<number> {
   const snapshot = await db().collection(COLLECTIONS.WAITLIST).count().get();
   return snapshot.data().count;
+}
+
+export async function listWaitlistEntries(): Promise<WaitlistEntry[]> {
+  const snapshot = await db()
+    .collection(COLLECTIONS.WAITLIST)
+    .orderBy("createdAt", "desc")
+    .get();
+
+  return snapshot.docs.map((doc) => doc.data() as WaitlistEntry);
 }
