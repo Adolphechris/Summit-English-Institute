@@ -36,7 +36,9 @@ export function getMorWebhookSecret(): string {
 }
 
 /**
- * Vérifie la signature HMAC SHA-256 d'un webhook Merchant of Record (ex. Lemon Squeezy).
+ * Vérifie la signature HMAC SHA-256 d'un webhook Merchant of Record (ex. Lemon Squeezy, Paddle).
+ * Accepte un en-tête en hexadécimal pur (ex. `abc123…`) ou préfixé (ex. `sha256=abc123…`).
+ * Comparaison en temps constant sur des buffers binaires (toujours en minuscules hex).
  */
 export function verifyMorWebhookSignature(
   rawBody: string,
@@ -45,24 +47,26 @@ export function verifyMorWebhookSignature(
 ): boolean {
   const webhookSecret = secret || getMorWebhookSecret();
   if (!webhookSecret) {
-    // Si aucun secret n'est configuré en dev/test
+    // Aucun secret configuré → la signature ne peut pas être vérifiée → refus (fail-closed).
     return false;
   }
 
-  if (!signatureHeader || typeof signatureHeader !== 'string') {
+  if (!rawBody || !signatureHeader || typeof signatureHeader !== 'string') {
     return false;
   }
 
   try {
     const hmac = createHmac('sha256', webhookSecret);
-    const digest = Buffer.from(hmac.update(rawBody).digest('hex'), 'utf8');
-    const signature = Buffer.from(signatureHeader.trim(), 'utf8');
+    const digest = hmac.update(rawBody).digest('hex');
+    // Normaliser l'en-tête reçu : tout minuscules, retire préfixe éventuel `sha256=`
+    const received = signatureHeader.trim().toLowerCase().split('=').pop() || '';
 
-    if (digest.length !== signature.length) {
+    const expectedBuf = Buffer.from(digest, 'hex');
+    const receivedBuf = Buffer.from(received, 'hex');
+    if (expectedBuf.length !== receivedBuf.length || receivedBuf.length === 0) {
       return false;
     }
-
-    return timingSafeEqual(digest, signature);
+    return timingSafeEqual(expectedBuf, receivedBuf);
   } catch {
     return false;
   }
@@ -94,13 +98,18 @@ export function parseMorWebhookPayload(payload: any): ParsedMorEvent | null {
     const eventName = payload.meta.event_name || 'order_created';
     const statusStr = attributes.status || '';
 
+    const totalRaw = attributes.total || attributes.total_usd;
+    const priceCents = totalRaw !== undefined && totalRaw !== null && totalRaw !== ''
+      ? Math.round(Number(totalRaw))
+      : undefined;
+
     return {
       provider: 'lemon_squeezy',
       eventName,
       orderId: String(payload.data.id || attributes.identifier || `ls_${Date.now()}`),
       email: (attributes.user_email || customData.email || '').toLowerCase().trim(),
       userId: customData.user_id ? Number(customData.user_id) : (attributes.user_id ? Number(attributes.user_id) : null),
-      amountCents: attributes.total || attributes.total_usd ? Math.round(Number(attributes.total || attributes.total_usd)) : undefined,
+      amountCents: priceCents,
       currency: attributes.currency || 'USD',
       status: statusStr === 'paid' ? 'paid' : (statusStr === 'refunded' ? 'refunded' : 'other'),
     };
@@ -125,13 +134,14 @@ export function parseMorWebhookPayload(payload: any): ParsedMorEvent | null {
 
   // 3. Format Generic fallback
   if (payload.orderId || payload.order_id || payload.email) {
+    const genericAmountRaw = payload.amountCents || payload.amount;
     return {
       provider: 'generic',
       eventName: payload.event || payload.type || 'order.completed',
       orderId: String(payload.orderId || payload.order_id || `mor_${Date.now()}`),
       email: (payload.email || '').toLowerCase().trim(),
       userId: payload.userId || payload.user_id ? Number(payload.userId || payload.user_id) : null,
-      amountCents: payload.amountCents || payload.amount,
+      amountCents: genericAmountRaw !== undefined && genericAmountRaw !== null ? Number(genericAmountRaw) : undefined,
       currency: payload.currency || 'USD',
       status: payload.status === 'paid' || payload.paid ? 'paid' : 'other',
     };

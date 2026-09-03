@@ -1,5 +1,6 @@
 import { getFirestore } from "@/services/database/firebase-admin";
 import Link from "next/link";
+import QRCode from "qrcode";
 
 interface Props {
   params: { code: string };
@@ -12,10 +13,15 @@ const CEFR_LABELS: Record<string, string> = {
   C1: 'C1 — Advanced', C2: 'C2 — Mastery',
 };
 
+const BASE_URL = process.env.NEXT_PUBLIC_APP_URL || 'https://english.iumorave-ac.org';
+
 export default async function VerifyCertificatePage({ params }: Props) {
   const { code } = params;
+  const verifyUrl = `${BASE_URL}/verify/${code.toUpperCase()}`;
+
   let cert: any = null;
   let error = false;
+  let qrDataUrl: string | null = null;
 
   try {
     const db = getFirestore();
@@ -35,6 +41,11 @@ export default async function VerifyCertificatePage({ params }: Props) {
         status: data.status || "passed",
         certificateCode: data.certificateCode || code,
       };
+      qrDataUrl = await QRCode.toDataURL(verifyUrl, {
+        width: 200,
+        margin: 2,
+        errorCorrectionLevel: 'M',
+      });
     }
   } catch {
     error = true;
@@ -71,6 +82,22 @@ export default async function VerifyCertificatePage({ params }: Props) {
                 <div className="text-5xl mb-2">✅</div>
                 <p className="text-emerald-700 font-bold text-lg">Certificat Authentique et Validé</p>
               </div>
+
+              {qrDataUrl && (
+                <div className="flex flex-col items-center gap-2">
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
+                  <img
+                    src={qrDataUrl}
+                    alt={`QR code de vérification du certificat ${cert.certificateCode}`}
+                    className="w-28 h-28 rounded-lg border border-slate-200 bg-white p-1"
+                    width={112}
+                    height={112}
+                  />
+                  <p className="text-xs text-slate-400 text-center max-w-xs">
+                    Scannez pour vérifier l&apos;authenticité de ce certificat en ligne.
+                  </p>
+                </div>
+              )}
 
               <div className="bg-slate-50 rounded-xl p-5 space-y-3 text-sm">
                 <Row label="Titulaire" value={cert.userName} />

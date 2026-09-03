@@ -42,13 +42,7 @@ jobs:
       - name: Build de production (next build)
         run: npm run build
 
-      - name: Standards de contenu — tranches livrées (T1 = niveaux 1-2) BLOQUANT
-        run: npm run content:validate:t1
-        # Bloquant : le scope couvre exactement les tranches remédiées et poussées.
-        # Évolution : T2 → --scope=1-5, T3 → --scope=1-8 (REMEDIATION_TRACKER.md).
-
-      - name: Standards de contenu — vue complète (observation, non bloquant)
+      - name: Standards de contenu — vue complète (BLOQUANT, toutes tranches T0-T5)
         run: npm run content:validate:full
-        # Non bloquant tant que T2-T5 n'ont pas rattrapé la baseline (43 leçons
-        # insuffisantes, 209 doublons questions — REMEDIATION_PLAN.md §4).
-        continue-on-error: true
+        # Bloquant : toutes les tranches (T0-T5) sont livrées et validées
+        # (REMEDIATION_TRACKER.md). Toute régression de contenu bloque le merge.

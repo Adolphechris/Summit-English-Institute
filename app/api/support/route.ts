@@ -2,10 +2,12 @@ import { NextResponse } from "next/server";
 import { getRequestUserId } from "@/services/auth/api";
 import { getUserById } from "@/services/database/firestore-repository";
 import { getFirestore } from "@/services/database/firebase-admin";
+import { sendSupportEmail } from "@/lib/email";
 
 const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
 // POST /api/support — Enregistre un message de support dans Firestore
+// et notifie l'équipe par email si BREVO_API_KEY + SUPPORT_NOTIFY_EMAIL sont configurés.
 export async function POST(request: Request) {
   try {
     const userId = await getRequestUserId(request);
@@ -55,6 +57,20 @@ export async function POST(request: Request) {
       status: "open",
       createdAt: now,
     });
+
+    // Notifier l'équipe si configuré (sinon stockage seul : l'équipe consulte Firestore).
+    const notifyEmail =
+      process.env.SUPPORT_NOTIFY_EMAIL || process.env.SUPPORT_EMAIL || "";
+    if (notifyEmail) {
+      const delivery = await sendSupportEmail({
+        to: notifyEmail,
+        subject: `[Support Summit] ${subject.trim().slice(0, 80)}`,
+        text: `Nouveau message de support\n\nDe : ${senderName || "Anonyme"} ${senderEmail ? `<${senderEmail}>` : ""}\nSujet : ${subject}\n\n${message}`,
+      });
+      if (!delivery.sent) {
+        console.warn("[SUPPORT] Email non envoyé (stockage conservé) :", delivery.error);
+      }
+    }
 
     return NextResponse.json({ ok: true }, { status: 201 });
   } catch (error) {

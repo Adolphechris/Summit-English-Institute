@@ -23,13 +23,18 @@ export async function POST(request: Request) {
 
     const secret = getMorWebhookSecret();
 
-    // Si un secret est configuré en production, on valide impérativement la signature
-    if (secret) {
-      const isValid = verifyMorWebhookSignature(rawBody, signatureHeader, secret);
-      if (!isValid) {
-        console.warn("[MOR WEBHOOK] Signature de webhook invalide");
-        return NextResponse.json({ error: "Signature invalide" }, { status: 401 });
-      }
+    // Fail-closed : si aucun secret n'est configuré, on refuse (jamais d'acceptation silencieuse).
+    // Permet les tests et la vérification manuelle uniquement quand un secret existe.
+    if (!secret) {
+      console.error('[MOR WEBHOOK] MOR_WEBHOOK_SECRET / LEMONSQUEEZY_WEBHOOK_SECRET non configuré — refus (fail-closed)');
+      return NextResponse.json({ error: 'Webhook non configuré' }, { status: 503 });
+    }
+
+    // Signature obligatoire : jamais skippée.
+    const isValid = verifyMorWebhookSignature(rawBody, signatureHeader, secret);
+    if (!isValid) {
+      console.warn('[MOR WEBHOOK] Signature de webhook invalide');
+      return NextResponse.json({ error: 'Signature invalide' }, { status: 401 });
     }
 
     let payload: any;

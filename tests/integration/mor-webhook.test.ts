@@ -147,4 +147,29 @@ describe('Webhook MOR — /api/webhooks/mor (Lemon Squeezy & Gumroad)', () => {
     expect(res.status).toBe(401);
     expect(updateUser).not.toHaveBeenCalled();
   });
+
+  it('FAIL-CLOSED : refuse les webhooks si aucun secret n’est configuré (503)', async () => {
+    const original = process.env.MOR_WEBHOOK_SECRET;
+    delete process.env.MOR_WEBHOOK_SECRET;
+
+    try {
+      // Signature même valide côté payload, mais aucun secret de config → refus.
+      const hmac = createHmac('sha256', mockSecret);
+      const fakeSignature = hmac.update('{}').digest('hex');
+      const req = new Request('http://localhost:3000/api/webhooks/mor', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'x-signature': fakeSignature,
+        },
+        body: '{}',
+      });
+
+      const res = await POST(req);
+      expect(res.status).toBe(503);
+      expect(updateUser).not.toHaveBeenCalled();
+    } finally {
+      process.env.MOR_WEBHOOK_SECRET = original;
+    }
+  });
 });
